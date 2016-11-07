@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="ProjectModuleManager">
+    <modules>
+      <module fileurl="file://$PROJECT_DIR$/.idea/cmsc137project.iml" filepath="$PROJECT_DIR$/.idea/cmsc137project.iml" />
+      <module fileurl="file://$PROJECT_DIR$/mainMenuDesign/mainMenuDesign.iml" filepath="$PROJECT_DIR$/mainMenuDesign/mainMenuDesign.iml" />
+    </modules>
+  </component>
+</project>
