@@ -9,17 +9,17 @@ public class MainMenuDesign {
 	static JFrame mainFrame = new JFrame("MadRace BETA");
 	static Container mainC = mainFrame.getContentPane();
 	static Container mainMenu = new Container();
-	static Container howTo = new Container();	
-	static Container startPanel = new Container();	
+	static Container howTo = new Container();
+	static Container startPanel = new Container();
 	static int htpCount = 1;	//for traversing "Help" images
 
 	private static void assembleLaunchUI() {
 		JPanel panel = new JPanel();
 		ImagePanel menu = new ImagePanel(new ImageIcon("piks/MadRace.jpg").getImage());
-				  
+
 		mainMenu.setLayout(new BorderLayout());
 		mainMenu.setPreferredSize(new Dimension(500, 550));
-		mainMenu.add(menu, BorderLayout.CENTER); 
+		mainMenu.add(menu, BorderLayout.CENTER);
 
 		JButton newGameButton = new JButton("Start Game");
 		newGameButton.addActionListener(new ActionListener(){
@@ -71,7 +71,7 @@ public class MainMenuDesign {
 
 		startPanel.setLayout(new BorderLayout());
 		startPanel.setPreferredSize(new Dimension(500, 550));
-		startPanel.add(cardPanel, BorderLayout.CENTER); 
+		startPanel.add(cardPanel, BorderLayout.CENTER);
 
 		JButton lButton = new JButton("LAUNCHA");
 		choosePlayer.add(lButton);
@@ -111,7 +111,7 @@ public class MainMenuDesign {
 		panel.add(startButton);
 		startButton.addActionListener(new ActionListener(){
 			public void actionPerformed(ActionEvent e){
-				
+
 			}
 		});
 
@@ -149,7 +149,7 @@ public class MainMenuDesign {
 
 		howTo.setLayout(new BorderLayout());
 		howTo.setPreferredSize(new Dimension(500, 550));
-		howTo.add(cardPanel, BorderLayout.CENTER); 
+		howTo.add(cardPanel, BorderLayout.CENTER);
 
 		JButton menuButton = new JButton("Main Menu");
 		panel.add(menuButton);
