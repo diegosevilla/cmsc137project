@@ -5,6 +5,9 @@ import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.util.HashMap;
 import java.util.Map;
+import java.net.*;
+import java.io.*;
+import java.util.*;
 
 public class GameServer implements Runnable{
 	/**
@@ -23,16 +26,7 @@ public class GameServer implements Runnable{
 	DatagramSocket serverSocket = null;
 	int gameStage;
 
-	// private static ServerSocket chatServer;
-	// private static ArrayList<Socket> chatclients = new ArrayList<Socket>();
-
-
 	public GameServer(int numOfPlayers){
-		//GreetingServer
-		/*serverSocket = new ServerSocket(port);
-		serverSocket.setSoTimeout(60000);
-		System.out.println("Waiting for client on port " + serverSocket.getLocalPort() + "...");*/
-
 		//GameServer
 		this.numOfPlayers = numOfPlayers;
 		try {
@@ -136,7 +130,8 @@ public class GameServer implements Runnable{
 		}
 	}
 
-	public static void main(String[] args){
+	public static void main(String[] args) throws IOException{
 		new GameServer(2);
+		// new GreetingServer(123);
 	}
 }

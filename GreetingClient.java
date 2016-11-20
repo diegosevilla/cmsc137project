@@ -5,10 +5,10 @@ import java.util.Scanner;
 public class GreetingClient{
    private static Socket client;
 
-   public static void main(String [] args){
+   public GreetingClient(String serverName, int port) {
       try{
-         String serverName = args[0]; //get IP address of server from first param
-         int port = Integer.parseInt(args[1]); //get port from second param
+         // String serverName = args[0]; //get IP address of server from first param
+         // int port = Integer.parseInt(args[1]); //get port from second param
          /* Open a ClientSocket and connect to ServerSocket */
 
          System.out.println("Connecting to " + serverName + " on port " + port);
