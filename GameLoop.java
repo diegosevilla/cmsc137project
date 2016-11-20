@@ -1,0 +1,239 @@
+import java.awt.Dimension;
+import java.awt.Graphics;
+import java.awt.Graphics2D;
+import java.awt.Color;
+import java.awt.event.KeyAdapter;
+import java.awt.event.KeyEvent;
+import java.awt.event.KeyListener;
+import java.awt.event.MouseEvent;
+import java.awt.event.MouseMotionAdapter;
+import java.awt.image.BufferedImage;
+import java.awt.BorderLayout;
+import java.io.IOException;
+import java.net.DatagramPacket;
+import java.net.DatagramSocket;
+import java.net.InetAddress;
+import javax.swing.BorderFactory;
+import javax.swing.JFrame;
+import javax.swing.JPanel;
+import javax.swing.JScrollPane;
+import javax.swing.JOptionPane;
+import javax.swing.JTextPane;
+import javax.swing.JTextArea;
+import javax.swing.text.*;
+import javax.swing.border.EtchedBorder;
+
+
+public class GameLoop extends JPanel implements Runnable{
+ 	JFrame frame= new JFrame();
+ 	JPanel southPanel = new JPanel();
+ 	int xspeed=2,yspeed=2,prevX,prevY, x= 10, y=10;
+ 	Thread t=new Thread(this);
+ 	String pname, name, serverData;
+ 	Camera camera;
+  	int direction;
+	
+ 	String server="";
+ 	boolean connected=false;
+  	DatagramSocket socket = new DatagramSocket();
+ 	Map map;
+	BufferedImage mapCopy;
+
+  	static final int WIDTH = 500;
+  	static final int HEIGHT = 700;
+
+  	private final int WAITING = 1;
+	private final int GAME_START = 2;
+	private final int IN_PROGRESS = 3;
+
+ 	public GameLoop(String server,String name) throws Exception{
+ 		this.server=server;
+ 		this.name=name;
+
+ 		frame.setTitle("MadRace: "+name);
+ 		//set some timeout for the socket
+ 		socket.setSoTimeout(100);
+ 		//Some gui stuff i hate.
+ 		frame.setLayout(new BorderLayout());
+ 		frame.getContentPane().add(this, BorderLayout.CENTER);
+ 		frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+ 		frame.setSize(WIDTH, HEIGHT);
+ 		frame.setVisible(true);
+
+ 		southPanel.setLayout(new BorderLayout());
+ 		southPanel.setSize(WIDTH, 200);
+		southPanel.setBorder(BorderFactory.createEmptyBorder(8, 8, 8, 8));
+
+ 		//chat box
+		JTextPane chatbox = new JTextPane();
+		JScrollPane chatscroll = new JScrollPane(chatbox);
+		chatbox.setPreferredSize(new Dimension(50, 100));
+		chatbox.setEditable(false);
+		chatbox.setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
+		StyledDocument doc = chatbox.getStyledDocument();
+		Style style = chatbox.addStyle("I'm a Style", null);
+        StyleConstants.setForeground(style, Color.GRAY);
+		StyleConstants.setBold(style, true);
+		try { 
+			doc.insertString(doc.getLength(), "BLAH\n",style); 
+		}catch (BadLocationException e){}
+		// chatscroll.getViewport().add(chatbox);
+
+		//new message
+ 		JTextArea chat = new JTextArea("Message: ");
+		chat.setPreferredSize(new Dimension(50, 40));
+		chat.setLineWrap(true);
+		chat.setWrapStyleWord(true);
+		chat.setFocusable(false);
+		chat.setBorder(BorderFactory.createEtchedBorder(EtchedBorder.RAISED));
+		
+		//add chat to southpanel and to frame
+		southPanel.add(chatscroll, BorderLayout.NORTH);
+		southPanel.add(chat, BorderLayout.SOUTH);
+ 		frame.getContentPane().add(southPanel, BorderLayout.SOUTH);
+
+ 		//create the buffer
+    	camera = new Camera(x, y);
+ 		map = new Map("try.txt", 500, 550);
+		mapCopy = new BufferedImage(map.width, map.height, BufferedImage.TYPE_INT_ARGB);
+		Graphics2D g = (Graphics2D) mapCopy.getGraphics();
+		g.setBackground(new Color(255,255,255,255));
+ 		frame.addKeyListener(new KeyHandler());
+
+ 		t.start();
+    /*new Thread(){
+      public void run(){
+        while(true){
+          if(forward)
+            x+= xspeed;
+            camera.tick(x, y);
+        }
+      }
+    }.start()*/
+ 	}
+
+ 	/**
+ 	 * Helper method for sending data to server
+ 	 * @param msg
+ 	 */
+ 	public void send(String msg){
+ 		try{
+ 			byte[] buf = msg.getBytes();
+         	InetAddress address = InetAddress.getByName(server);
+         	DatagramPacket packet = new DatagramPacket(buf, buf.length, address, GameServer.port);
+         	socket.send(packet);
+      }catch(Exception e){}
+ 	}
+
+ 	public void run(){
+ 		while(true){
+ 			try{
+ 				Thread.sleep(1);
+ 			}catch(Exception ioe){}
+
+ 			//Get the data from players
+ 			byte[] buf = new byte[256];
+ 			DatagramPacket packet = new DatagramPacket(buf, buf.length);
+ 			try{
+      	 socket.receive(packet);
+ 			}catch(Exception ioe){/*lazy exception handling :)*/}
+
+ 			serverData=new String(buf);
+ 			serverData=serverData.trim();
+			if(serverData != null && !serverData.equals(""))
+				System.out.println(serverData);
+ 			//Study the following kids.
+ 			if (!connected && serverData.startsWith("CONNECTED")){
+ 				connected=true;
+ 				System.out.println("Connected.");
+ 			}else if (!connected){
+ 				System.out.println("Connecting..");
+				x = map.startX;
+				y = map.startY;
+ 				send("CONNECT "+name + " " + map.startX + " " + map.startY);
+ 			}else if (connected){
+ 				if (serverData.startsWith("PLAYER")){
+ 					String[] playersInfo = serverData.split(":");
+					Graphics2D g = (Graphics2D) mapCopy.getGraphics();
+					g.setBackground(new Color(255,255,255,0));
+					g.clearRect(0,0, map.width, map.height);
+ 					for (int i=0;i<playersInfo.length;i++){
+ 						String[] playerInfo = playersInfo[i].split(" ");
+ 						String pname =playerInfo[1];
+ 						int x = Integer.parseInt(playerInfo[2]);
+ 						int y = Integer.parseInt(playerInfo[3]);
+ 						//draw on the offscreen image
+ 						mapCopy.getGraphics().fillOval(x, y, 5, 5);
+ 						mapCopy.getGraphics().drawString(pname,x-10,y+30);
+ 					}
+ 					//show the changes
+ 					frame.repaint();
+ 				}
+ 			}
+ 		}
+ 	}
+
+ 	/**
+ 	 * Repainting method
+ 	 */
+ 	public void paintComponent(Graphics g){
+ 		Graphics2D g2d = (Graphics2D) g;
+ 		g2d.translate(camera.x, camera.y);
+		if(map != null && map.mapImage != null)
+			g.drawImage(map.mapImage, 0,0,null);
+ 		if(mapCopy != null)
+			g.drawImage(mapCopy, 0, 0, null);
+ 		g2d.translate(-camera.x, -camera.y);
+ 	}
+
+
+ 	class KeyHandler extends KeyAdapter{
+    public void keyReleased(KeyEvent ke){
+       switch (ke.getKeyCode()){
+         case KeyEvent.VK_S:yspeed = 2;break;
+         case KeyEvent.VK_W:yspeed = 2;break;
+         case KeyEvent.VK_D:xspeed = 2; break;// % 640;break;
+         case KeyEvent.VK_A:xspeed = 2; break;// % 640;break;
+       }
+     }
+
+ 		public void keyPressed(KeyEvent ke){
+ 			prevX=x;prevY=y;
+ 			switch (ke.getKeyCode()){
+	 			case KeyEvent.VK_S:
+						if(map.checkCollision(x,y+yspeed)){
+							y += yspeed; 
+							yspeed += yspeed == 8? 0 : 1;
+						}
+						break; // % 640;break;
+	 			case KeyEvent.VK_W:
+						if(map.checkCollision(x,y-yspeed)){
+							y -=  yspeed;
+							yspeed += yspeed == 8? 0 : 1;
+						}
+						break;
+        		case KeyEvent.VK_D:
+						if(map.checkCollision(x+xspeed,y)){
+							x += xspeed;
+							xspeed += xspeed == 8? 0 : 1;
+						}
+						break;
+	 			case KeyEvent.VK_A:
+						if(map.checkCollision(x-xspeed, y)){
+							x -=  xspeed;
+							xspeed += xspeed == 8? 0 : 1;
+						}
+						break;
+ 			}
+ 			if (prevX != x || prevY != y){
+ 				send("PLAYER "+name+" "+x+" "+y);
+ 			}
+ 			camera.tick(x,y);
+ 		}
+ 	}
+/*
+
+ 	public static void main(String args[]) throws Exception{
+ 		new GameLoop("localhost",JOptionPane.showInputDialog("enter name: "));
+ 	}*/
+}

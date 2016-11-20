@@ -3,7 +3,6 @@ import java.awt.*;
 import java.awt.event.*;
 import java.util.*;
 
-
 public class MainMenuDesign {
 	//Create and set up the window.
 	static JFrame mainFrame = new JFrame("MadRace BETA");
@@ -110,8 +109,13 @@ public class MainMenuDesign {
 		JButton startButton = new JButton("Start");
 		panel.add(startButton);
 		startButton.addActionListener(new ActionListener(){
-			public void actionPerformed(ActionEvent e){
-				
+			public void actionPerformed(ActionEvent e) {
+				try{
+					mainFrame.setVisible(false);
+					new GameLoop("localhost",JOptionPane.showInputDialog("Enter name: "));
+				}catch(Exception f){
+					f.printStackTrace();
+				}
 			}
 		});
 
