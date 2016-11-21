@@ -5,6 +5,9 @@ import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.util.HashMap;
 import java.util.Map;
+import java.net.*;
+import java.io.*;
+import java.util.*;
 
 public class GameServer implements Runnable{
 	/**
@@ -26,11 +29,11 @@ public class GameServer implements Runnable{
 	public GameServer(int numOfPlayers){
 		this.numOfPlayers = numOfPlayers;
 		try {
-    	serverSocket = new DatagramSocket(port);
+			serverSocket = new DatagramSocket(port);
 			serverSocket.setSoTimeout(100);
 		} catch (IOException e) {
-            System.err.println("Could not listen on port: "+port);
-            System.exit(-1);
+			System.err.println("Could not listen on port: "+port);
+			System.exit(-1);
 		}catch(Exception e){}
 		gameState = new HashMap<String, RaceCar>();
 		gameStage = WAITING;
@@ -86,7 +89,7 @@ public class GameServer implements Runnable{
 			case WAITING :
 				if (data.startsWith("CONNECT")){
 					String tokens[] = data.split(" ");
-					RaceCar racecar=new RaceCar(tokens[1],packet.getAddress(),packet.getPort(), tokens[2], tokens[3]);
+					RaceCar racecar=new RaceCar(tokens[1],packet.getAddress(),packet.getPort(), Integer.parseInt(tokens[2]), Integer.parseInt(tokens[3]));
 					System.out.println("Player connected: "+tokens[1]);
 					gameState.put(tokens[1].trim(),racecar);
 					broadcast("CONNECTED "+tokens[1]);
@@ -98,13 +101,12 @@ public class GameServer implements Runnable{
 				}
 				break;
 			case GAME_START:
-				  broadcast("START");
+				  broadcast("INITIALPLACES:" + stringify());
 				  gameStage=IN_PROGRESS;
 				  break;
 			case IN_PROGRESS:
 				  //Player data was received!
 				  if (data.startsWith("PLAYER")){
-					 System.out.println(data);
 					  //Tokenize:
 					  //The format: PLAYER <player name> <x> <y>
 					  String[] playerInfo = data.split(" ");
@@ -126,6 +128,9 @@ public class GameServer implements Runnable{
 	}
 
 	public static void main(String[] args){
-		new GameServer(2);
+		try{
+			new GameServer(2);
+			new ChatServer();
+		}catch(Exception e){}
 	}
 }

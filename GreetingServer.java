@@ -12,12 +12,8 @@ public class GreetingServer{
       serverSocket = new ServerSocket(port);
       serverSocket.setSoTimeout(60000);
       System.out.println("Waiting for client on port " + serverSocket.getLocalPort() + "...");
-   }
 
-  
-   public static void main(String [] args){
       try{
-         int port = Integer.parseInt(args[0]);
          GreetingServer g = new GreetingServer(port);
          Thread l = new Thread(new Thread(){
             public void run(){

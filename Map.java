@@ -6,17 +6,15 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
 
-/**
- * Created by pingu on 11/15/16.
- */
+
 public class Map extends JPanel{
-    int height = 0;
+	  int height = 0;
     int width = 0;
     int mapLegend[][];
     int pixSizeWidth;
     int pixSizeHeight;
-	int startX;
-	int startY;
+		int startX;
+		int startY;
 
     BufferedImage mapImage;
 
@@ -39,7 +37,7 @@ public class Map extends JPanel{
                 }
                 row++;
             }
-			createImage();
+				createImage();
         }catch(Exception e) {
             e.printStackTrace();
         }
@@ -55,22 +53,22 @@ public class Map extends JPanel{
                 try{
                     switch(mapLegend[i][j]){
                         case 1:
-                            img = ImageIO.read(new File("brick.png"));
-							startX  = i*pixSizeHeight;
-							startY = j*pixSizeWidth;
+                            img = ImageIO.read(new File("piks/brick.png"));
+														startX = j*pixSizeHeight;
+														startY = i*pixSizeWidth;
                             break;
                         case 2:
-                            img = ImageIO.read(new File("path.png"));
+                            img = ImageIO.read(new File("piks/path.png"));
                             break;
                         case 3:
-                            img = ImageIO.read(new File("wall2.png"));
+                            img = ImageIO.read(new File("piks/wall.png"));
                             break;
                         default:
-                            img = ImageIO.read(new File("brick.png"));
+                            img = ImageIO.read(new File("piks/brick.png"));
                     }
 
                 }catch (Exception e){
-
+									e.printStackTrace();
                 }
                 img = resize(img, pixSizeWidth, pixSizeHeight);
                 g2d.drawImage(img, j*pixSizeWidth, i*pixSizeHeight, null);
@@ -80,7 +78,7 @@ public class Map extends JPanel{
 
     public void paintComponent(Graphics g){
         Graphics2D g2d = (Graphics2D) g;
-		g2d.drawImage(mapImage, 0,0, null);
+			g2d.drawImage(mapImage, 0,0, null);
     }
 
     public BufferedImage resize(BufferedImage img, int newW, int newH) {
@@ -95,10 +93,11 @@ public class Map extends JPanel{
     }
 
 	public boolean checkCollision(int x, int y){
-		x = x/pixSizeWidth;
-		y = y/pixSizeHeight;
-		System.out.println(mapLegend[y][x]);
+		return true;
+		/*x = x/pixSizeHeight;
+		y = y/pixSizeWidth;
+		System.out.println(mapLegend[x][y]);
 		if(mapLegend[y][x] == 2 || mapLegend[y][x] == 1) return true;
-		return false;
+		return false;*/
 	}
 }

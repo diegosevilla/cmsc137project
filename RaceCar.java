@@ -7,12 +7,12 @@ public class RaceCar {
 	private InetAddress address;
 	private int port;
 	
-	public RaceCar(String name, InetAddress address, int port, String x, String y){
+	public RaceCar(String name, InetAddress address, int port, int x, int y){
+		this.x = x;
+		this.y = y;
 		this.name = name;
 		this.address = address;
 		this.port = port;
-		this.x = Integer.parseInt(x);
-		this.y = Integer.parseInt(y);
 	}
 	
 	/* setters and getters*/
