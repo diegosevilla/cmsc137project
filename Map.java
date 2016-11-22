@@ -55,18 +55,18 @@ public class Map extends JPanel{
                 try{
                     switch(mapLegend[i][j]){
                         case 1:
-                            img = ImageIO.read(new File("brick.png"));
+                            img = ImageIO.read(new File("piks/brick.png"));
 							startX  = i*pixSizeHeight;
 							startY = j*pixSizeWidth;
                             break;
                         case 2:
-                            img = ImageIO.read(new File("path.png"));
+                            img = ImageIO.read(new File("piks/path.png"));
                             break;
                         case 3:
-                            img = ImageIO.read(new File("wall2.png"));
+                            img = ImageIO.read(new File("piks/wall2.png"));
                             break;
                         default:
-                            img = ImageIO.read(new File("brick.png"));
+                            img = ImageIO.read(new File("piks/brick.png"));
                     }
 
                 }catch (Exception e){

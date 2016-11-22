@@ -19,6 +19,8 @@ public class GameServer implements Runnable{
 
 	private static final long serialVersionUID = 1L;
 
+	ArrayList plist; //player list
+	int playerCount;
 	int numOfPlayers;
 	String data;
 	static int port = 4444;
@@ -29,6 +31,7 @@ public class GameServer implements Runnable{
 	public GameServer(int numOfPlayers){
 		//GameServer
 		this.numOfPlayers = numOfPlayers;
+		plist = new ArrayList();
 		try {
 		serverSocket = new DatagramSocket(port);
 			serverSocket.setSoTimeout(100);
@@ -64,6 +67,10 @@ public class GameServer implements Runnable{
 		}
 	}
 
+	public String getPlayer(int pcount){
+		return plist.get(pcount).toString();
+	}
+
 
 	public String stringify(){
 		String retval="";
@@ -78,7 +85,7 @@ public class GameServer implements Runnable{
 	public void run() {
 		// TODO Auto-generated method stub
 		System.out.print("starting...");
-		int playerCount = 0;
+		playerCount = 0;
 		while(true){
 			byte[] buf = new byte[256];
 			DatagramPacket packet = new DatagramPacket(buf, buf.length);
@@ -93,14 +100,23 @@ public class GameServer implements Runnable{
 					String tokens[] = data.split(" ");
 					RaceCar racecar=new RaceCar(tokens[1],packet.getAddress(),packet.getPort(), tokens[2], tokens[3]);
 					System.out.println("Player connected: "+tokens[1]);
+					plist.add(tokens[1]);
 					gameState.put(tokens[1].trim(),racecar);
 					broadcast("CONNECTED "+tokens[1]);
 					playerCount++;
 					System.out.println(playerCount);
+
+				  	
 					if (playerCount==numOfPlayers){
 						gameStage=GAME_START;
 					}
 				}
+				String temp="NAMES "+playerCount+" ";
+				for(int i=0; i<plist.size(); i++){
+			  		temp += plist.get(i) + " ";
+			  	}
+			  	broadcast(temp);
+
 				break;
 			case GAME_START:
 				  broadcast("START");
@@ -129,9 +145,9 @@ public class GameServer implements Runnable{
 			}
 		}
 	}
-
+/*
 	public static void main(String[] args) throws IOException{
 		new GameServer(2);
 		// new GreetingServer(123);
-	}
+	}*/
 }

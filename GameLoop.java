@@ -26,6 +26,7 @@ import javax.swing.Action;
 import javax.swing.AbstractAction;
 import javax.swing.text.*;
 import javax.swing.border.EtchedBorder;
+import java.util.ArrayList;
 
 public class GameLoop extends JPanel implements Runnable{
 	JFrame frame= new JFrame();
@@ -42,6 +43,8 @@ public class GameLoop extends JPanel implements Runnable{
 	Map map;
 	BufferedImage mapCopy;
 
+	ArrayList plist;
+	int playerCount=0;
 	JTextPane chatbox = new JTextPane();
 	JTextField chat= new JTextField();
 
@@ -53,7 +56,9 @@ public class GameLoop extends JPanel implements Runnable{
 	private final int IN_PROGRESS = 3;
 
 	public GameLoop(String server,String name) throws Exception{
+		plist = new ArrayList();
 		
+
 		this.server=server;
 		this.name=name;
 
@@ -152,7 +157,7 @@ public class GameLoop extends JPanel implements Runnable{
 
 			serverData=new String(buf);
 			serverData=serverData.trim();
-			if(serverData != null && !serverData.equals(""))
+			if(serverData != null && !serverData.equals("") && !(serverData.startsWith("NAMES")))
 				System.out.println(serverData);
 			//Study the following kids.
 			if (!connected && serverData.startsWith("CONNECTED")){
@@ -164,7 +169,17 @@ public class GameLoop extends JPanel implements Runnable{
 				y = map.startY;
 				send("CONNECT "+name + " " + map.startX + " " + map.startY);
 			}else if (connected){
-				if (serverData.startsWith("PLAYER")){
+				if (serverData.startsWith("NAMES")){
+					String[] playersInfo = serverData.split(" ");
+					int tempCount = Integer.parseInt(playersInfo[1]);
+					if(tempCount>playerCount){
+						for (int i=(2+playerCount);i<playersInfo.length;i++){
+							plist.add(playersInfo[i]);
+						}
+						playerCount = tempCount;
+					}
+				}
+				else if (serverData.startsWith("PLAYER")){
 					String[] playersInfo = serverData.split(":");
 					Graphics2D g = (Graphics2D) mapCopy.getGraphics();
 					g.setBackground(new Color(255,255,255,0));
@@ -183,6 +198,11 @@ public class GameLoop extends JPanel implements Runnable{
 				}
 			}
 		}
+	}
+
+
+	public String getPlayer(int pcount){
+		return plist.get(pcount).toString();
 	}
 
 	/**
@@ -239,7 +259,6 @@ public class GameLoop extends JPanel implements Runnable{
 				case KeyEvent.VK_ESCAPE:
 						chat.setFocusable(true);
 						chat.requestFocus();
-						System.out.println("ESCAPEE");
 						break;
 			}
 			if (prevX != x || prevY != y){

@@ -2,17 +2,42 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.event.*;
 import java.util.*;
+import javax.swing.border.EtchedBorder;
+import javax.imageio.ImageIO;
+import java.io.IOException;
+import javax.swing.text.*;
 
-public class MainMenuDesign {
+
+public class MainMenuDesign  implements Runnable{
 	//Create and set up the window.
 	static JFrame mainFrame = new JFrame("MadRace BETA");
 	static Container mainC = mainFrame.getContentPane();
 	static Container mainMenu = new Container();
 	static Container howTo = new Container();	
 	static Container startPanel = new Container();	
+	static Container lobbyPanel = new Container();	
 	static int htpCount = 1;	//for traversing "Help" images
+	
+	static String name;
+	static JTextField getName = new JTextField();
+	static JComboBox ptypebox = null;	//player type
+	static JLabel nameLabel;
+
+	static int pnum;	//number of players
+	static int pcount = 0;	//number of players
+	static JTextPane plist = new JTextPane();	//player list
+
+	static String server;
+	static boolean isServer; 
+	static GameServer gameServer;
+	static GameLoop gameLoop;
+
+	static StyledDocument doc;	//add player
+	static Style style;
 
 	private static void assembleLaunchUI() {
+		mainFrame.setResizable(false);
+
 		JPanel panel = new JPanel();
 		ImagePanel menu = new ImagePanel(new ImageIcon("piks/MadRace.jpg").getImage());
 				  
@@ -26,6 +51,7 @@ public class MainMenuDesign {
 				mainMenu.setVisible(false);
 				startPanel.setVisible(true);
 				howTo.setVisible(false);
+				lobbyPanel.setVisible(false);
 			}
 		});
 		panel.add(newGameButton);
@@ -38,6 +64,7 @@ public class MainMenuDesign {
 				mainMenu.setVisible(false);
 				howTo.setVisible(true);
 				startPanel.setVisible(false);
+				lobbyPanel.setVisible(false);
 			}
 		});
 
@@ -58,6 +85,8 @@ public class MainMenuDesign {
 		JPanel panel = new JPanel();
 		JPanel choosePlayer = new JPanel();
 		JPanel cardPanel = new JPanel();
+		JLabel nameLabel;		//player name
+		JLabel typeLabel;		//player type
 		cardPanel.setLayout(cardLayout);
 
 		ImagePanel htp1 = new ImagePanel(new ImageIcon("piks/clauncha.jpg").getImage());
@@ -72,27 +101,71 @@ public class MainMenuDesign {
 		startPanel.setPreferredSize(new Dimension(500, 550));
 		startPanel.add(cardPanel, BorderLayout.CENTER); 
 
-		JButton lButton = new JButton("LAUNCHA");
-		choosePlayer.add(lButton);
-		lButton.addActionListener(new ActionListener(){
-			public void actionPerformed(ActionEvent e){
-				cardLayout.show(cardPanel, "1");
+		//get player name
+		getName.setPreferredSize(new Dimension(120, 25));
+		getName.setBorder(BorderFactory.createEtchedBorder(EtchedBorder.RAISED));
+		nameLabel = new JLabel("Player Name: ", JLabel.CENTER);
+		choosePlayer.add(nameLabel);
+		choosePlayer.add(getName);
+
+		//get player type
+		String[] ptype = {"LAUNCHA", "RAMMA", "GUNNA"};
+		ptypebox = new JComboBox<String>(ptype);
+		typeLabel = new JLabel("Player Type: ", JLabel.CENTER);
+		choosePlayer.add(typeLabel);
+		choosePlayer.add(ptypebox);
+		ptypebox.addItemListener(new ItemListener(){
+			public void itemStateChanged(ItemEvent itemEvent){
+				if(ptypebox.getSelectedItem().toString() == "LAUNCHA"){
+					cardLayout.show(cardPanel, "1");
+				}else if(ptypebox.getSelectedItem().toString() == "RAMMA"){
+					cardLayout.show(cardPanel, "2");
+				}else if(ptypebox.getSelectedItem().toString() == "GUNNA"){
+					cardLayout.show(cardPanel, "3");
+				}
 			}
 		});
 
-		JButton rButton = new JButton("RAMMA");
-		choosePlayer.add(rButton);
-		rButton.addActionListener(new ActionListener(){
-			public void actionPerformed(ActionEvent e){
-				cardLayout.show(cardPanel, "2");
+		//bottom panel buttons
+		JButton startButton = new JButton("New Game");
+		panel.add(startButton);
+		startButton.addActionListener(new ActionListener(){
+			public void actionPerformed(ActionEvent e) {
+				try{
+					name = getName.getText();
+					server = "localhost";
+					isServer = true;
+					pnum = Integer.parseInt(JOptionPane.showInputDialog("Enter number of players: "));
+					gameServer = new GameServer(pnum);
+					(new Thread(new MainMenuDesign())).start();
+					try{ gameLoop = new GameLoop(server, name);
+					}catch(Exception f){}
+
+					startPanel.setVisible(false);
+					howTo.setVisible(false);
+					mainMenu.setVisible(false);
+					lobbyPanel.setVisible(true);
+				}catch(Exception f){
+					f.printStackTrace();
+				}
 			}
 		});
 
-		JButton gButton = new JButton("GUNNA");
-		choosePlayer.add(gButton);
-		gButton.addActionListener(new ActionListener(){
+		JButton joinButton = new JButton("Join Game");
+		panel.add(joinButton);
+		joinButton.addActionListener(new ActionListener(){
 			public void actionPerformed(ActionEvent e){
-				cardLayout.show(cardPanel, "3");
+				server = JOptionPane.showInputDialog("Enter server address: ");
+				isServer= false;
+				name = getName.getText();
+
+				startPanel.setVisible(false);
+				howTo.setVisible(false);
+				mainMenu.setVisible(false);
+				lobbyPanel.setVisible(true);
+				(new Thread(new MainMenuDesign())).start();
+				try{ gameLoop = new GameLoop(server, name);
+				}catch(Exception f){}
 			}
 		});
 
@@ -102,29 +175,8 @@ public class MainMenuDesign {
 			public void actionPerformed(ActionEvent e){
 				startPanel.setVisible(false);
 				howTo.setVisible(false);
+				lobbyPanel.setVisible(false);
 				mainMenu.setVisible(true);
-			}
-		});
-
-		JButton startButton = new JButton("Start");
-		panel.add(startButton);
-		startButton.addActionListener(new ActionListener(){
-			public void actionPerformed(ActionEvent e) {
-				try{
-					mainFrame.setVisible(false);
-					new GameLoop("localhost",JOptionPane.showInputDialog("Enter name: "));
-					// new GreetingClient("192.168.1.22", 123);
-				}catch(Exception f){
-					f.printStackTrace();
-				}
-			}
-		});
-
-		JButton quitButton = new JButton("Quit");
-		panel.add(quitButton);
-		quitButton.addActionListener(new ActionListener(){
-			public void actionPerformed(ActionEvent e){
-				System.exit(0);
 			}
 		});
 
@@ -162,6 +214,7 @@ public class MainMenuDesign {
 			public void actionPerformed(ActionEvent e){
 				howTo.setVisible(false);
 				startPanel.setVisible(false);
+				lobbyPanel.setVisible(false);
 				mainMenu.setVisible(true);
 			}
 		});
@@ -189,11 +242,117 @@ public class MainMenuDesign {
 		mainFrame.pack();
 	}
 
+	public static void lobby(){
+		JPanel playerPanel = new JPanel(){
+			@Override	//set background image
+			protected void paintComponent(Graphics g){
+				try{
+					Image bg = ImageIO.read(getClass().getResource("piks/bg.jpg"));
+					g.drawImage(bg, 0, 0, this.getWidth(), this.getHeight(), null);
+				}catch(IOException e){
+					e.printStackTrace();
+				}
+			}
+		};
+
+		lobbyPanel.setLayout(new BorderLayout());
+		lobbyPanel.setPreferredSize(new Dimension(500, 550));
+
+		//display player name
+		nameLabel = new JLabel("MadRace", JLabel.CENTER);
+		nameLabel.setFont(new Font("Serif", Font.BOLD, 60));
+		lobbyPanel.add(nameLabel, BorderLayout.NORTH);
+		
+		//set of players
+		JScrollPane pscroll = new JScrollPane(plist);		//player scrollable
+		plist.setPreferredSize(new Dimension(450, 428));	
+		plist.setEditable(false);
+		plist.setFocusable(false);
+		plist.setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
+		doc = plist.getStyledDocument();
+		style = plist.addStyle("I'm a Style", null);
+		StyleConstants.setForeground(style, Color.GRAY);
+		StyleConstants.setBold(style, true);
+		playerPanel.add(pscroll);
+
+		//bottom panel
+		JPanel downPanel = new JPanel();
+		JButton menuButton = new JButton("Main Menu");
+		downPanel.add(menuButton);
+		menuButton.addActionListener(new ActionListener(){
+			public void actionPerformed(ActionEvent e){
+				howTo.setVisible(false);
+				startPanel.setVisible(false);
+				lobbyPanel.setVisible(false);
+				mainMenu.setVisible(true);
+			}
+		});
+
+		JButton startButton = new JButton("Start");
+		downPanel.add(startButton);
+		startButton.addActionListener(new ActionListener(){
+			public void actionPerformed(ActionEvent e){
+				try{ 
+					if(isServer){
+						gameServer = new GameServer(pnum);
+					}
+					else{
+						if(pcount == pnum){
+							gameLoop = new GameLoop(server, name);
+						}else{
+							JOptionPane.showMessageDialog(new JPanel(), "Still waiting for players", "Error", JOptionPane.ERROR_MESSAGE);
+						}
+					}
+				}catch(Exception f){
+					f.printStackTrace();
+				}
+			}
+		});
+
+		JButton quitButton = new JButton("Quit");
+		downPanel.add(quitButton);
+		quitButton.addActionListener(new ActionListener(){
+			public void actionPerformed(ActionEvent e){
+				System.exit(0);
+			}
+		});
+
+		// downPanel.setContentPane(bg);
+
+		lobbyPanel.add(playerPanel, BorderLayout.CENTER);
+		lobbyPanel.add(downPanel, BorderLayout.SOUTH);
+		mainC.add(lobbyPanel);
+		mainFrame.pack();
+	}
+
+	public void run() {
+		
+		while(true){
+			try{
+				//add to list of players in lobby
+				if(isServer){
+					if(gameServer.playerCount > pcount){
+						doc.insertString(doc.getLength(), gameServer.getPlayer(pcount) + "\n",style);
+						pcount++;
+					}
+				}else{
+					if(gameLoop.playerCount > pcount){
+						doc.insertString(doc.getLength(), gameLoop.getPlayer(pcount) + "\n",style);
+						pcount++;
+					}
+				}
+				Thread.sleep(1000); 	//1second
+			}catch(Exception e){}
+		}
+	}
+
 	public static void main(String[] args) {
 		howToPlay();
 		howTo.setVisible(false);
 		startGame();
 		startPanel.setVisible(false);
+		lobby();
+		lobbyPanel.setVisible(false);
 		assembleLaunchUI();
 
 		mainFrame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
