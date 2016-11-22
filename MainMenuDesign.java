@@ -293,15 +293,10 @@ public class MainMenuDesign  implements Runnable{
 		startButton.addActionListener(new ActionListener(){
 			public void actionPerformed(ActionEvent e){
 				try{ 
-					if(isServer){
-						gameServer = new GameServer(pnum);
-					}
-					else{
-						if(pcount == pnum){
-							gameLoop = new GameLoop(server, name);
-						}else{
-							JOptionPane.showMessageDialog(new JPanel(), "Still waiting for players", "Error", JOptionPane.ERROR_MESSAGE);
-						}
+					if(pcount == pnum){
+						JOptionPane.showMessageDialog(new JPanel(), "Game already in progress. Catch up!", "Warning", JOptionPane.WARNING);
+					}else{
+						JOptionPane.showMessageDialog(new JPanel(), "Still waiting for players", "Error", JOptionPane.ERROR_MESSAGE);
 					}
 				}catch(Exception f){
 					f.printStackTrace();
