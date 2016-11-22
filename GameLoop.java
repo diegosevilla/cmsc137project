@@ -39,6 +39,7 @@ public class GameLoop extends JPanel implements Runnable{
 	
 	String server="";
 	boolean connected=false;
+	boolean start=false;
 	DatagramSocket socket = new DatagramSocket();
 	Map map;
 	BufferedImage mapCopy;
@@ -169,6 +170,7 @@ public class GameLoop extends JPanel implements Runnable{
 				y = map.startY;
 				send("CONNECT "+name + " " + map.startX + " " + map.startY);
 			}else if (connected){
+				//player names
 				if (serverData.startsWith("NAMES")){
 					String[] playersInfo = serverData.split(" ");
 					int tempCount = Integer.parseInt(playersInfo[1]);
@@ -178,6 +180,8 @@ public class GameLoop extends JPanel implements Runnable{
 						}
 						playerCount = tempCount;
 					}
+				}else if (serverData.startsWith("START")){
+					start = true;
 				}
 				else if (serverData.startsWith("PLAYER")){
 					String[] playersInfo = serverData.split(":");

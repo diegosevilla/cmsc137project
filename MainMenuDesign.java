@@ -293,8 +293,8 @@ public class MainMenuDesign  implements Runnable{
 		startButton.addActionListener(new ActionListener(){
 			public void actionPerformed(ActionEvent e){
 				try{ 
-					if(pcount == pnum){
-						JOptionPane.showMessageDialog(new JPanel(), "Game already in progress. Catch up!", "Warning", JOptionPane.WARNING);
+					if(gameLoop.start){
+						JOptionPane.showMessageDialog(new JPanel(), "Game already in progress. Catch up!", "Warning", JOptionPane.WARNING_MESSAGE);
 					}else{
 						JOptionPane.showMessageDialog(new JPanel(), "Still waiting for players", "Error", JOptionPane.ERROR_MESSAGE);
 					}
@@ -311,8 +311,6 @@ public class MainMenuDesign  implements Runnable{
 				System.exit(0);
 			}
 		});
-
-		// downPanel.setContentPane(bg);
 
 		lobbyPanel.add(playerPanel, BorderLayout.CENTER);
 		lobbyPanel.add(downPanel, BorderLayout.SOUTH);
