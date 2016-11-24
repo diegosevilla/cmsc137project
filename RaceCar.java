@@ -1,18 +1,33 @@
 import java.net.InetAddress;
-
+import java.awt.image.BufferedImage;
+import javax.imageio.ImageIO;
+import java.io.File;
 
 public class RaceCar {
 	private int x, y;
 	private String name;
 	private InetAddress address;
 	private int port;
+	public BufferedImage img;
 	
-	public RaceCar(String name, InetAddress address, int port, int x, int y){
+	public RaceCar(String name, int x, int y, String img){
+		this.x = x;
+		this.y = y;
+		this.name = name;
+		try{
+			this.img = ImageIO.read(new File("piks/tgunna.png"));
+		}catch(Exception e){};
+	}
+	
+	public RaceCar(String name, InetAddress address, int port, int x, int y, String img){
 		this.x = x;
 		this.y = y;
 		this.name = name;
 		this.address = address;
 		this.port = port;
+		try{
+			this.img = ImageIO.read(new File("piks/t"+img));
+		}catch(Exception e){}
 	}
 	
 	/* setters and getters*/
@@ -23,12 +38,12 @@ public class RaceCar {
 
 	public void setX(int x) {
 		this.x = x;
+
 	}
 
 	public int getY() {
 		return y;
 	}
-
 	public void setY(int y) {
 		this.y = y;
 	}

@@ -25,6 +25,7 @@ public class GameServer implements Runnable{
 	Map<String, RaceCar> gameState = null;
 	DatagramSocket serverSocket = null;
 	int gameStage;
+	int startX, startY;
 
 	public GameServer(int numOfPlayers){
 		this.numOfPlayers = numOfPlayers;
@@ -89,8 +90,14 @@ public class GameServer implements Runnable{
 			case WAITING :
 				if (data.startsWith("CONNECT")){
 					String tokens[] = data.split(" ");
-					RaceCar racecar=new RaceCar(tokens[1],packet.getAddress(),packet.getPort(), Integer.parseInt(tokens[2]), Integer.parseInt(tokens[3]));
+					startX = Integer.parseInt(tokens[2]);
+					startY = Integer.parseInt(tokens[3]);
+					int x = startX + 40*(playerCount % 3);
+					int y = startY + 40*(playerCount / 3);
+					RaceCar racecar=new RaceCar(tokens[1],packet.getAddress(),packet.getPort(), x,y, "gunna.png");
 					System.out.println("Player connected: "+tokens[1]);
+					if(gameState.containsKey(tokens[1]))
+						continue;
 					gameState.put(tokens[1].trim(),racecar);
 					broadcast("CONNECTED "+tokens[1]);
 					playerCount++;
@@ -117,6 +124,7 @@ public class GameServer implements Runnable{
 					  RaceCar racecar = (RaceCar) gameState.get(pname);
 					  racecar.setX(x);
 					  racecar.setY(y);
+						//if(x && y)
 					  //Update the game state
 					  gameState.put(pname, racecar);
 					  //Send to all the updated game state

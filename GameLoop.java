@@ -39,7 +39,7 @@ public class GameLoop extends JPanel implements Runnable{
 	
 	String server="";
 	boolean connected=false;
-
+	RaceCar myCar;
 	Map map;
 	BufferedImage mapCopy;
 
@@ -62,7 +62,7 @@ public class GameLoop extends JPanel implements Runnable{
 		
 		OutputStream outToServer = client.getOutputStream();
     DataOutputStream out = new DataOutputStream(outToServer);
-		
+		myCar = new RaceCar(name, x,y, "anek");
 		frame.setTitle("MadRace: "+name);
 		//set some timeout for the socket
 		socket.setSoTimeout(100);
@@ -119,7 +119,7 @@ public class GameLoop extends JPanel implements Runnable{
           }
        	}catch(Exception e){
        	}
-			}
+			}	
 		};
 
 		//add chat to southpanel and to frame
@@ -128,10 +128,10 @@ public class GameLoop extends JPanel implements Runnable{
 		frame.getContentPane().add(southPanel, BorderLayout.SOUTH);
 
 		//create the buffer
-		camera = new Camera(x, y);
 		map = new Map("try.txt", 1200, 1200);
 		mapCopy = new BufferedImage(map.width, map.height, BufferedImage.TYPE_INT_ARGB);
 		Graphics2D g = (Graphics2D) mapCopy.getGraphics();
+		camera = new Camera(map.startX, map.startY);
 		g.setBackground(new Color(255,255,255,255));
 		frame.addKeyListener(new KeyHandler());
 
@@ -175,14 +175,22 @@ public class GameLoop extends JPanel implements Runnable{
 				System.out.println("Connecting..");
 				x = map.startX;
 				y = map.startY;
+				camera.tick(x,y);
 				send("CONNECT "+name + " " + map.startX + " " + map.startY);
 			}else if (connected){
-				if (serverData.startsWith("INITIALPLACES:")){
+				/*if (serverData.startsWith("INITIALPLACES:")){
 					String[] playersInfo = serverData.split(":");
 					for (int i=0;i<playersInfo.length;i++){
-						System.out.println(playersInfo[i]);
+						String[] playerInfo = playersInfo[i].split(" ");
+						String pname =playerInfo[1];
+						int x = Integer.parseInt(playerInfo[2]);
+						int y = Integer.parseInt(playerInfo[3]);
+						//draw on the offscreen image
+						//mapCopy.getGraphics().fillOval(x, y, 5, 5);
+						mapCopy.getGraphics().drawImage(myCar.img, x,y,null);
+						mapCopy.getGraphics().drawString(pname,x-10,y+30);
 					}
-				}
+				}*/
 				if (serverData.startsWith("PLAYER")){
 					String[] playersInfo = serverData.split(":");
 					Graphics2D g = (Graphics2D) mapCopy.getGraphics();
@@ -194,7 +202,8 @@ public class GameLoop extends JPanel implements Runnable{
 						int x = Integer.parseInt(playerInfo[2]);
 						int y = Integer.parseInt(playerInfo[3]);
 						//draw on the offscreen image
-						mapCopy.getGraphics().fillOval(x, y, 5, 5);
+						//mapCopy.getGraphics().fillOval(x, y, 5, 5);
+						mapCopy.getGraphics().drawImage(myCar.img, x,y,null);
 						mapCopy.getGraphics().drawString(pname,x-10,y+30);
 					}
 					//show the changes
@@ -234,25 +243,25 @@ public class GameLoop extends JPanel implements Runnable{
 				case KeyEvent.VK_S:
 						if(map.checkCollision(x,y+yspeed)){
 							y += yspeed; 
-							yspeed += yspeed == 8? 0 : 1;
+							yspeed += yspeed == 5? 0 : 1;
 						}
 						break; // % 640;break;
 				case KeyEvent.VK_W:
 						if(map.checkCollision(x,y-yspeed)){
 							y -=  yspeed;
-							yspeed += yspeed == 8? 0 : 1;
+							yspeed += yspeed == 5? 0 : 1;
 						}
 						break;
 				case KeyEvent.VK_D:
 						if(map.checkCollision(x+xspeed,y)){
 							x += xspeed;
-							xspeed += xspeed == 8? 0 : 1;
+							xspeed += xspeed == 5? 0 : 1;
 						}
 						break;
 				case KeyEvent.VK_A:
 						if(map.checkCollision(x-xspeed, y)){
 							x -=  xspeed;
-							xspeed += xspeed == 8? 0 : 1;
+							xspeed += xspeed == 5? 0 : 1;
 						}
 						break;
  			case KeyEvent.VK_ESCAPE:

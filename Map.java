@@ -53,9 +53,9 @@ public class Map extends JPanel{
                 try{
                     switch(mapLegend[i][j]){
                         case 1:
-                            img = ImageIO.read(new File("piks/brick.png"));
-														startX = j*pixSizeHeight;
-														startY = i*pixSizeWidth;
+                            img = ImageIO.read(new File("piks/start.png"));
+														if(startX == 0) startX = j*pixSizeHeight;
+														if(startY == 0) startY = i*pixSizeWidth;
                             break;
                         case 2:
                             img = ImageIO.read(new File("piks/path.png"));
@@ -93,11 +93,9 @@ public class Map extends JPanel{
     }
 
 	public boolean checkCollision(int x, int y){
-		return true;
-		/*x = x/pixSizeHeight;
+		x = x/pixSizeHeight;
 		y = y/pixSizeWidth;
-		System.out.println(mapLegend[x][y]);
 		if(mapLegend[y][x] == 2 || mapLegend[y][x] == 1) return true;
-		return false;*/
+		return false;
 	}
 }
