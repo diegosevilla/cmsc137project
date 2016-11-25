@@ -1,18 +1,34 @@
 import java.net.InetAddress;
-
+import java.awt.image.BufferedImage;
+import javax.imageio.ImageIO;
+import java.io.File;
 
 public class RaceCar {
-	private int x, y;
+	private int x, y, angle;
 	private String name;
+	private int playertype;
 	private InetAddress address;
 	private int port;
+	public BufferedImage img;
 	
-	public RaceCar(String name, InetAddress address, int port, String x, String y){
+	public RaceCar(String name, int x, int y, String img){
+ 		this.x = x;
+ 		this.y = y;
+ 		this.name = name;
+ 		try{
+ 			this.img = ImageIO.read(new File("piks/tgunna.png"));
+ 		}catch(Exception e){};
+ 	}
+
+	public RaceCar(String name, InetAddress address, int port, int x, int y, String img){
+		this.x = x;
+		this.y = y;
 		this.name = name;
 		this.address = address;
 		this.port = port;
-		this.x = Integer.parseInt(x);
-		this.y = Integer.parseInt(y);
+		try{
+ 			this.img = ImageIO.read(new File("piks/t"+img));
+ 		}catch(Exception e){}
 	}
 	
 	/* setters and getters*/
@@ -31,6 +47,14 @@ public class RaceCar {
 
 	public void setY(int y) {
 		this.y = y;
+	}
+
+	public int getAngle() {
+		return angle;
+	}
+
+	public void setAngle(int angle) {
+		this.angle = angle;
 	}
 
 	public String getName() {
@@ -62,7 +86,8 @@ public class RaceCar {
 		retval+="PLAYER ";
 		retval+=name+" ";
 		retval+=x+" ";
-		retval+=y;
+		retval+=y+" ";
+		retval+=angle;
 		return retval;
 	}
 	

@@ -11,10 +11,8 @@ import java.awt.event.MouseEvent;
 import java.awt.event.MouseMotionAdapter;
 import java.awt.image.BufferedImage;
 import java.awt.BorderLayout;
-import java.io.IOException;
-import java.net.DatagramPacket;
-import java.net.DatagramSocket;
-import java.net.InetAddress;
+import java.io.*;
+import java.net.*;
 import javax.swing.JFrame;
 import javax.swing.JPanel;
 import javax.swing.BorderFactory;
@@ -27,8 +25,13 @@ import javax.swing.AbstractAction;
 import javax.swing.text.*;
 import javax.swing.border.EtchedBorder;
 import java.util.ArrayList;
+import java.awt.geom.AffineTransform;
+import java.awt.image.AffineTransformOp;
 
 public class GameLoop extends JPanel implements Runnable{
+	DatagramSocket socket = new DatagramSocket();
+	private static Socket client;
+
 	JFrame frame= new JFrame();
 	JPanel southPanel = new JPanel();
 	int xspeed=2,yspeed=2,prevX,prevY, x= 10, y=10;
@@ -36,11 +39,13 @@ public class GameLoop extends JPanel implements Runnable{
 	String pname, name, serverData;
 	Camera camera;
 	int direction;
-	
+
+	RaceCar myCar;
+	int angle=180;
+
 	String server="";
 	boolean connected=false;
 	boolean start=false;
-	DatagramSocket socket = new DatagramSocket();
 	Map map;
 	BufferedImage mapCopy;
 
@@ -56,12 +61,18 @@ public class GameLoop extends JPanel implements Runnable{
 	private final int GAME_START = 2;
 	private final int IN_PROGRESS = 3;
 
-	public GameLoop(String server,String name) throws Exception{
+	public GameLoop(String server,String name, int playertype) throws Exception{
 		plist = new ArrayList();
 		
-
 		this.server=server;
 		this.name=name;
+
+		client = new Socket(server, 8080);
+
+		OutputStream outToServer = client.getOutputStream();
+		DataOutputStream out = new DataOutputStream(outToServer);
+
+		myCar = new RaceCar(name, x,y, "anek");
 
 		frame.setTitle("MadRace: "+name);
 		//set some timeout for the socket
@@ -95,15 +106,32 @@ public class GameLoop extends JPanel implements Runnable{
 
 		//ENTER KeyEvent of JTextField chat
 		chat.addActionListener(new ActionListener() {
-		    @Override
-		    public void actionPerformed(ActionEvent e) {
-		       	chat.setFocusable(false);
-		       	try { doc.insertString(doc.getLength(), name + ": " + chat.getText() + "\n",style);
-		       }catch (BadLocationException bd){}
-		       	chat.setText("");
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				chat.setFocusable(false);
+				try { 
+					out.writeUTF(name+": "+chat.getText() + "\n");
+					out.flush();
+				}catch (Exception err){}
+				chat.setText("");
 				frame.requestFocus();
-		    }
+			}
 		});
+
+		Thread listenForMessage = new Thread(){
+			public void run(){
+				try{
+					InputStream inFromServer = client.getInputStream();
+					DataInputStream in = new DataInputStream(inFromServer);
+					String msg = "";
+					while(true){
+						msg = in.readUTF(); 
+						doc.insertString(doc.getLength(), msg,style);
+					}
+				}catch(Exception e){}
+			}
+		};
+
 
 		//add chat to southpanel and to frame
 		southPanel.add(chatscroll, BorderLayout.NORTH);
@@ -111,23 +139,15 @@ public class GameLoop extends JPanel implements Runnable{
 		frame.getContentPane().add(southPanel, BorderLayout.SOUTH);
 
 		//create the buffer
-		camera = new Camera(x, y);
 		map = new Map("try.txt", 500, 550);
 		mapCopy = new BufferedImage(map.width, map.height, BufferedImage.TYPE_INT_ARGB);
 		Graphics2D g = (Graphics2D) mapCopy.getGraphics();
+		camera = new Camera(map.startX, map.startY);
 		g.setBackground(new Color(255,255,255,255));
 		frame.addKeyListener(new KeyHandler());
 
 		t.start();
-	/*new Thread(){
-	  public void run(){
-		while(true){
-		  if(forward)
-			x+= xspeed;
-			camera.tick(x, y);
-		}
-	  }
-	}.start()*/
+		listenForMessage.start();
 	}
 
 	/**
@@ -140,7 +160,7 @@ public class GameLoop extends JPanel implements Runnable{
 			InetAddress address = InetAddress.getByName(server);
 			DatagramPacket packet = new DatagramPacket(buf, buf.length, address, GameServer.port);
 			socket.send(packet);
-	  }catch(Exception e){}
+		}catch(Exception e){}
 	}
 
 	public void run(){
@@ -153,14 +173,11 @@ public class GameLoop extends JPanel implements Runnable{
 			byte[] buf = new byte[256];
 			DatagramPacket packet = new DatagramPacket(buf, buf.length);
 			try{
-		 socket.receive(packet);
+				socket.receive(packet);
 			}catch(Exception ioe){/*lazy exception handling :)*/}
 
 			serverData=new String(buf);
 			serverData=serverData.trim();
-			if(serverData != null && !serverData.equals("") && !(serverData.startsWith("NAMES")))
-				System.out.println(serverData);
-			//Study the following kids.
 			if (!connected && serverData.startsWith("CONNECTED")){
 				connected=true;
 				System.out.println("Connected.");
@@ -171,6 +188,12 @@ public class GameLoop extends JPanel implements Runnable{
 				send("CONNECT "+name + " " + map.startX + " " + map.startY);
 			}else if (connected){
 				//player names
+				/*if (serverData.startsWith("INITIALPLACES:")){
+					String[] playersInfo = serverData.split(":");
+					for (int i=0;i<playersInfo.length;i++){
+						System.out.println(playersInfo[i]);
+					}
+				}*/
 				if (serverData.startsWith("NAMES")){
 					String[] playersInfo = serverData.split(" ");
 					int tempCount = Integer.parseInt(playersInfo[1]);
@@ -193,8 +216,19 @@ public class GameLoop extends JPanel implements Runnable{
 						String pname =playerInfo[1];
 						int x = Integer.parseInt(playerInfo[2]);
 						int y = Integer.parseInt(playerInfo[3]);
-						//draw on the offscreen image
-						mapCopy.getGraphics().fillOval(x, y, 5, 5);
+						int pAngle = Integer.parseInt(playerInfo[4]);
+
+						// Rotation 
+						double rotationRequired = Math.toRadians (pAngle);
+						double locationX = myCar.img.getWidth() / 2;
+						double locationY = myCar.img.getHeight() / 2;
+						AffineTransform tx = AffineTransform.getRotateInstance(rotationRequired, locationX, locationY);
+						AffineTransformOp op = new AffineTransformOp(tx, AffineTransformOp.TYPE_BILINEAR);
+
+						// Drawing the rotated image
+						mapCopy.getGraphics().drawImage(op.filter(myCar.img, null), x,y,null);
+						// mapCopy.getGraphics().fillOval(x, y, 5, 5);
+						// mapCopy.getGraphics().drawImage(myCar.img, x,y,null);
 						mapCopy.getGraphics().drawString(pname,x-10,y+30);
 					}
 					//show the changes
@@ -239,25 +273,29 @@ public class GameLoop extends JPanel implements Runnable{
 				case KeyEvent.VK_S:
 						if(map.checkCollision(x,y+yspeed)){
 							y += yspeed; 
-							yspeed += yspeed == 8? 0 : 1;
+							yspeed += yspeed == 5? 0 : 1;
+							angle = 180;
 						}
 						break; // % 640;break;
 				case KeyEvent.VK_W:
 						if(map.checkCollision(x,y-yspeed)){
 							y -=  yspeed;
-							yspeed += yspeed == 8? 0 : 1;
+							yspeed += yspeed == 5? 0 : 1;
+							angle = 0;
 						}
 						break;
 				case KeyEvent.VK_D:
 						if(map.checkCollision(x+xspeed,y)){
 							x += xspeed;
-							xspeed += xspeed == 8? 0 : 1;
+							xspeed += xspeed == 5? 0 : 1;
+							angle = 90;
 						}
 						break;
 				case KeyEvent.VK_A:
 						if(map.checkCollision(x-xspeed, y)){
 							x -=  xspeed;
-							xspeed += xspeed == 8? 0 : 1;
+							xspeed += xspeed == 5? 0 : 1;
+							angle = 270;
 						}
 						break;
 				case KeyEvent.VK_ESCAPE:
@@ -266,14 +304,9 @@ public class GameLoop extends JPanel implements Runnable{
 						break;
 			}
 			if (prevX != x || prevY != y){
-				send("PLAYER "+name+" "+x+" "+y);
+				send("PLAYER "+name+" "+x+" "+y+" "+angle);
 			}
 			camera.tick(x,y);
 		}
 	}
-
-	/*
-	public static void main(String args[]) throws Exception{
-		new GameLoop("localhost",JOptionPane.showInputDialog("enter name: "));
-	}*/
 }

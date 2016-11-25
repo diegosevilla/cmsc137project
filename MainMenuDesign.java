@@ -23,6 +23,7 @@ public class MainMenuDesign  implements Runnable{
 	static JComboBox ptypebox = null;	//player type
 	static JLabel nameLabel;
 
+	static int playertype=1;	//type of players
 	static int pnum;	//number of players
 	static int pcount = 0;	//number of players
 	static JTextPane plist = new JTextPane();	//player list
@@ -137,8 +138,9 @@ public class MainMenuDesign  implements Runnable{
 					isServer = true;
 					pnum = Integer.parseInt(JOptionPane.showInputDialog("Enter number of players: "));
 					gameServer = new GameServer(pnum);
+					new ChatServer();
 					(new Thread(new MainMenuDesign())).start();
-					try{ gameLoop = new GameLoop(server, name);
+					try{ gameLoop = new GameLoop(server, name, playertype);
 					}catch(Exception f){}
 
 					startPanel.setVisible(false);
@@ -164,7 +166,7 @@ public class MainMenuDesign  implements Runnable{
 				mainMenu.setVisible(false);
 				lobbyPanel.setVisible(true);
 				(new Thread(new MainMenuDesign())).start();
-				try{ gameLoop = new GameLoop(server, name);
+				try{ gameLoop = new GameLoop(server, name, playertype);
 				}catch(Exception f){}
 			}
 		});
