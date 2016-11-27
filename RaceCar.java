@@ -9,24 +9,28 @@ public class RaceCar implements Serializable{
 	private final int GAME_START = 2;
 	private final int IN_PROGRESS = 3;
 
-	private int x, y, angle;
+	private int x, y, angle, health, ammo, place;
 	private String name;
 	private String playertype;
-	public String message;
 	private InetAddress address;
 	private int port;
 	transient BufferedImage img;
 	public int gameStage;
+	public String message;
 	
 	public RaceCar(String name, int x, int y, String playertype){
  		this.x = x;
  		this.y = y;
  		this.name = name;
  		this.playertype = playertype;
- 		this.gameStage = 0;
+ 		this.health = 100;
+ 		this.place = 1;
+ 		if(playertype == "ramma") this.ammo = 0;
+ 		else this.ammo = 50;
  		try{
  			this.img = ImageIO.read(new File("piks/t" + playertype + ".png"));
  		}catch(Exception e){};
+ 		this.gameStage = 0;
  	}
 
 	public RaceCar(String name, InetAddress address, int port, int x, int y, String playertype){
@@ -84,6 +88,29 @@ public class RaceCar implements Serializable{
 		this.playertype = playertype;
 	}
 
+	public int getHealth() {
+		return health;
+	}
+
+	public void setHealth(int health) {
+		this.health = health;
+	}
+
+	public int getAmmo() {
+		return ammo;
+	}
+
+	public void setAmmo(int ammo) {
+		this.ammo = ammo;
+	}
+
+	public int getPlace() {
+		return place;
+	}
+
+	public void setPlace(int place) {
+		this.place = place;
+	}
 
 	public BufferedImage getImage() {
 		return img;

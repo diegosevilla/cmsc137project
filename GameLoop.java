@@ -11,6 +11,7 @@ import java.awt.event.MouseEvent;
 import java.awt.event.MouseMotionAdapter;
 import java.awt.image.BufferedImage;
 import java.awt.BorderLayout;
+import java.awt.Font;
 import java.io.*;
 import java.net.*;
 import javax.swing.JFrame;
@@ -20,10 +21,14 @@ import javax.swing.JScrollPane;
 import javax.swing.JOptionPane;
 import javax.swing.JTextPane;
 import javax.swing.JTextField;
+import javax.swing.JLabel;
+import javax.swing.BoxLayout;
 import javax.swing.Action;
 import javax.swing.AbstractAction;
 import javax.swing.text.*;
 import javax.swing.border.EtchedBorder;
+import javax.swing.JProgressBar;
+import javax.swing.Timer;
 import java.util.ArrayList;
 import java.util.*;
 import java.awt.geom.AffineTransform;
@@ -34,7 +39,9 @@ public class GameLoop extends JPanel implements Runnable{
 	private static Socket client;
 
 	JFrame frame= new JFrame();
+	JPanel bottomPanel = new JPanel();
 	JPanel southPanel = new JPanel();
+	JPanel statsPanel = new JPanel();
 	int xspeed=2,yspeed=2,prevX,prevY, x= 10, y=10;
 	Thread t=new Thread(this);
 	String name, serverData="";
@@ -54,6 +61,10 @@ public class GameLoop extends JPanel implements Runnable{
 	int playerCount=0;
 	JTextPane chatbox = new JTextPane();
 	JTextField chat= new JTextField();
+	JProgressBar healthBar = new JProgressBar();
+	Timer timer;
+	JLabel ammoLabel;
+	JLabel placeLabel;
 
 	static final int WIDTH = 500;
 	static final int HEIGHT = 700;
@@ -86,9 +97,16 @@ public class GameLoop extends JPanel implements Runnable{
 		frame.setSize(WIDTH, HEIGHT);
 		frame.setVisible(true);
 
+		bottomPanel.setLayout(new BorderLayout());
+
 		southPanel.setLayout(new BorderLayout());
-		southPanel.setSize(WIDTH, 200);
+		southPanel.setSize(300, 200);
 		southPanel.setBorder(BorderFactory.createEmptyBorder(8, 8, 8, 8));
+
+		statsPanel.setLayout(new BoxLayout(statsPanel, BoxLayout.Y_AXIS));
+		statsPanel.setSize(200, 200);
+		statsPanel.setMaximumSize(new Dimension(200, 200));
+		statsPanel.setBorder(BorderFactory.createEmptyBorder(8, 8, 8, 8));
 
 		//chat box
 		JScrollPane chatscroll = new JScrollPane(chatbox);
@@ -134,11 +152,57 @@ public class GameLoop extends JPanel implements Runnable{
 			}
 		};
 
+		//health bar
+		healthBar.setMaximumSize(new Dimension(100, 20));
+		healthBar.setMinimumSize(new Dimension(100, 20));
+		healthBar.setPreferredSize(new Dimension(100, 20));
+		healthBar.setAlignmentX(0f);
 
-		//add chat to southpanel and to frame
+		timer = new Timer(50, new ActionListener() {
+			public void actionPerformed(ActionEvent actionEvent) {
+				int val = healthBar.getValue();
+				//full health
+				if(myCar.getHealth()==100){
+					if (val >= 100) {
+						timer.stop();
+					}
+					healthBar.setValue(++val);
+				}else{	//with damage
+					if (val <= myCar.getHealth()) {
+						timer.stop();
+					}
+					healthBar.setValue(--val);
+				}
+			}
+		});
+
+		timer.start();	//NOOOOOOOOOTE: called whenever damage is inflicted
+
+		JLabel healthLabel = new JLabel("Health:", JLabel.CENTER);
+		healthLabel.setFont(new Font("Serif", Font.BOLD, 15));
+		JLabel ammolbl = new JLabel("Ammo:", JLabel.CENTER);
+		ammolbl.setFont(new Font("Serif", Font.BOLD, 15));
+		ammoLabel = new JLabel(Integer.toString(myCar.getAmmo()) +" / 50", JLabel.CENTER);
+		ammoLabel.setFont(new Font("Serif", Font.BOLD, 25));
+		JLabel placelbl = new JLabel("Rank:", JLabel.CENTER);
+		placelbl.setFont(new Font("Serif", Font.BOLD, 15));
+		placeLabel = new JLabel(Integer.toString(myCar.getPlace()), JLabel.CENTER);
+		placeLabel.setFont(new Font("Serif", Font.BOLD, 25));
+
+		statsPanel.add(healthLabel);
+		statsPanel.add(healthBar);
+		statsPanel.add(ammolbl);
+		statsPanel.add(ammoLabel);
+		statsPanel.add(placelbl);
+		statsPanel.add(placeLabel);
+
+		//add southpanel(west) and statspanel(east) to bottompanel
 		southPanel.add(chatscroll, BorderLayout.NORTH);
 		southPanel.add(chat, BorderLayout.SOUTH);
-		frame.getContentPane().add(southPanel, BorderLayout.SOUTH);
+		bottomPanel.add(southPanel, BorderLayout.CENTER);
+		bottomPanel.add(statsPanel, BorderLayout.EAST);
+		frame.getContentPane().add(bottomPanel, BorderLayout.SOUTH);
+		// frame.getContentPane().add(statsPanel, BorderLayout.SOUTH);
 
 		//create the buffer
 		map = new Map("try.txt", 500, 550);
