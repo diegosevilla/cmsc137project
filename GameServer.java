@@ -48,15 +48,26 @@ public class GameServer implements Runnable{
 	public void broadcast(String msg){
 		for(String key : gameState.keySet()){
 			RaceCar player= gameState.get(key);
-			send(player,msg);
+	 		player.message = msg;
+			gameState.put(player.getName(), player);
+		}
+		for(String key : gameState.keySet()){
+			RaceCar player= gameState.get(key);
+			send(player);
 		}
 	}
 
-	public void send(RaceCar player, String msg){
-		DatagramPacket packet;
-		byte buf[] = msg.getBytes();
-		packet = new DatagramPacket(buf, buf.length, player.getAddress(),player.getPort());
+	public void send(RaceCar player){
 		try{
+			ByteArrayOutputStream byteStream = new ByteArrayOutputStream(5000);
+			ObjectOutputStream os = new ObjectOutputStream(byteStream);
+			os.flush();
+			os.writeObject(gameState);
+			os.flush();
+			//retrieves byte array
+			byte[] sendBuf = byteStream.toByteArray();
+			DatagramPacket packet = new DatagramPacket(sendBuf, sendBuf.length, player.getAddress(),player.getPort());
+
 			serverSocket.send(packet);
 		}catch(IOException ioe){
 			ioe.printStackTrace();
@@ -83,39 +94,40 @@ public class GameServer implements Runnable{
 		System.out.print("starting...");
 		playerCount = 0;
 		while(true){
-			byte[] buf = new byte[256];
+			byte[] buf = new byte[5000];
 			DatagramPacket packet = new DatagramPacket(buf, buf.length);
+			RaceCar racecar = new RaceCar("qwe", 10,10, "launcha");
 			try{
-     			serverSocket.receive(packet);
+				serverSocket.receive(packet);
+				ByteArrayInputStream byteStream = new ByteArrayInputStream(buf);
+				ObjectInputStream is = new ObjectInputStream(byteStream);
+				racecar = (RaceCar)is.readObject(); 					
+				racecar.setAddress(packet.getAddress());
+				racecar.setPort(packet.getPort());
 			}catch(Exception ioe){ }
 
 			data = new String(buf).trim();
 			switch(gameStage){
 			case WAITING :
-				if (data.startsWith("CONNECT")){
-					String tokens[] = data.split(" ");
+				if(racecar.gameStage == 1){
+					int x = racecar.getX() + 40*(playerCount % 3);
+	 				int y = racecar.getY() + 40*(playerCount / 3);				
+	  				if(gameState.containsKey(racecar.getName()))
+	 					continue;
 
-					startX = Integer.parseInt(tokens[2]);
- 					startY = Integer.parseInt(tokens[3]);
- 					int x = startX + 40*(playerCount % 3);
- 					int y = startY + 40*(playerCount / 3);
- 					RaceCar racecar=new RaceCar(tokens[1],packet.getAddress(),packet.getPort(), x,y, "gunna.png");
-  					
-  					System.out.println("Player connected: "+tokens[1]);
- 					if(gameState.containsKey(tokens[1]))
- 						continue;
+	 				plist.add(racecar.getName());
+					gameState.put(racecar.getName(),racecar);
+					broadcast("CONNECTED "+racecar.getName());
+	  				System.out.println(racecar.getName()+" CONNECTED");
 
-					plist.add(tokens[1]);
-					gameState.put(tokens[1].trim(),racecar);
-					broadcast("CONNECTED "+tokens[1]);
 					playerCount++;
 					System.out.println(playerCount);
 
-				  	
 					if (playerCount==numOfPlayers){
 						gameStage=GAME_START;
 					}
 				}
+
 				String temp="NAMES "+playerCount+" ";
 				for(int i=0; i<plist.size(); i++){
 			  		temp += plist.get(i) + " ";
@@ -124,31 +136,17 @@ public class GameServer implements Runnable{
 
 				break;
 			case GAME_START:
-				  broadcast("START");
-				  broadcast("INITIALPLACES:" + stringify());
-				  gameStage=IN_PROGRESS;
-				  break;
+				broadcast("START");
+				System.out.println("GAME START");
+				gameStage=IN_PROGRESS;
+				break;
 			case IN_PROGRESS:
-				  //Player data was received!
-				  if (data.startsWith("PLAYER")){
-					  //Tokenize:
-					  //The format: PLAYER <player name> <x> <y>
-					  String[] playerInfo = data.split(" ");
-					  String pname = playerInfo[1];
-					  int x = Integer.parseInt(playerInfo[2].trim());
-					  int y = Integer.parseInt(playerInfo[3].trim());
-					  int angle = Integer.parseInt(playerInfo[4].trim());
-					  //Get the player from the game state
-					  RaceCar racecar = (RaceCar) gameState.get(pname);
-					  racecar.setX(x);
-					  racecar.setY(y);
-					  racecar.setAngle(angle);
-					  //Update the game state
-					  gameState.put(pname, racecar);
-					  //Send to all the updated game state
-					  broadcast(stringify());
-				  }
-				  break;
+				if(racecar.message!=null && racecar.message.startsWith("PLAYER")){
+					gameState.put(racecar.getName(), racecar);
+					//Send to all the updated game state
+					broadcast("PLAYER "+racecar.getName());
+				}
+				break;
 			}
 		}
 	}

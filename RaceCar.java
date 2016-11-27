@@ -2,32 +2,43 @@ import java.net.InetAddress;
 import java.awt.image.BufferedImage;
 import javax.imageio.ImageIO;
 import java.io.File;
+import java.io.Serializable;
 
-public class RaceCar {
+public class RaceCar implements Serializable{
+	private final int WAITING = 1;
+	private final int GAME_START = 2;
+	private final int IN_PROGRESS = 3;
+
 	private int x, y, angle;
 	private String name;
-	private int playertype;
+	private String playertype;
+	public String message;
 	private InetAddress address;
 	private int port;
-	public BufferedImage img;
+	transient BufferedImage img;
+	public int gameStage;
 	
-	public RaceCar(String name, int x, int y, String img){
+	public RaceCar(String name, int x, int y, String playertype){
  		this.x = x;
  		this.y = y;
  		this.name = name;
+ 		this.playertype = playertype;
+ 		this.gameStage = 0;
  		try{
- 			this.img = ImageIO.read(new File("piks/tgunna.png"));
+ 			this.img = ImageIO.read(new File("piks/t" + playertype + ".png"));
  		}catch(Exception e){};
  	}
 
-	public RaceCar(String name, InetAddress address, int port, int x, int y, String img){
+	public RaceCar(String name, InetAddress address, int port, int x, int y, String playertype){
 		this.x = x;
 		this.y = y;
 		this.name = name;
 		this.address = address;
 		this.port = port;
+		 this.playertype = playertype;
+ 		this.gameStage = 0;
 		try{
- 			this.img = ImageIO.read(new File("piks/t"+img));
+ 			this.img = ImageIO.read(new File("piks/t" + playertype + ".png"));
  		}catch(Exception e){}
 	}
 	
@@ -63,6 +74,26 @@ public class RaceCar {
 
 	public void setName(String name) {
 		this.name = name;
+	}
+
+	public String getPlayerType() {
+		return playertype;
+	}
+
+	public void setPlayerType(String playertype) {
+		this.playertype = playertype;
+	}
+
+
+	public BufferedImage getImage() {
+		return img;
+	}
+
+	public void setImage(String playertype) {
+		this.playertype = playertype;
+		try{
+ 			this.img = ImageIO.read(new File("piks/t" + playertype + ".png"));
+ 		}catch(Exception e){};
 	}
 
 	public InetAddress getAddress() {

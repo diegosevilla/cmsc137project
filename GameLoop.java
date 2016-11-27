@@ -25,6 +25,7 @@ import javax.swing.AbstractAction;
 import javax.swing.text.*;
 import javax.swing.border.EtchedBorder;
 import java.util.ArrayList;
+import java.util.*;
 import java.awt.geom.AffineTransform;
 import java.awt.image.AffineTransformOp;
 
@@ -36,7 +37,7 @@ public class GameLoop extends JPanel implements Runnable{
 	JPanel southPanel = new JPanel();
 	int xspeed=2,yspeed=2,prevX,prevY, x= 10, y=10;
 	Thread t=new Thread(this);
-	String pname, name, serverData;
+	String name, serverData="";
 	Camera camera;
 	int direction;
 
@@ -61,7 +62,7 @@ public class GameLoop extends JPanel implements Runnable{
 	private final int GAME_START = 2;
 	private final int IN_PROGRESS = 3;
 
-	public GameLoop(String server,String name, int playertype) throws Exception{
+	public GameLoop(String server,String name, String playertype) throws Exception{
 		plist = new ArrayList();
 		
 		this.server=server;
@@ -72,7 +73,8 @@ public class GameLoop extends JPanel implements Runnable{
 		OutputStream outToServer = client.getOutputStream();
 		DataOutputStream out = new DataOutputStream(outToServer);
 
-		myCar = new RaceCar(name, x,y, "anek");
+		myCar = new RaceCar(name, x,y, playertype);
+		myCar.gameStage = 1;
 
 		frame.setTitle("MadRace: "+name);
 		//set some timeout for the socket
@@ -150,15 +152,17 @@ public class GameLoop extends JPanel implements Runnable{
 		listenForMessage.start();
 	}
 
-	/**
-	 * Helper method for sending data to server
-	 * @param msg
-	 */
-	public void send(String msg){
+	public void send(){
 		try{
-			byte[] buf = msg.getBytes();
 			InetAddress address = InetAddress.getByName(server);
-			DatagramPacket packet = new DatagramPacket(buf, buf.length, address, GameServer.port);
+			ByteArrayOutputStream byteStream = new ByteArrayOutputStream(5000);
+			ObjectOutputStream os = new ObjectOutputStream(byteStream);
+			os.flush();
+			os.writeObject(myCar);	//convert object
+			os.flush();
+			//retrieves byte array
+			byte[] sendBuf = byteStream.toByteArray();
+			DatagramPacket packet = new DatagramPacket(sendBuf, sendBuf.length, address, GameServer.port);
 			socket.send(packet);
 		}catch(Exception e){}
 	}
@@ -170,30 +174,41 @@ public class GameLoop extends JPanel implements Runnable{
 			}catch(Exception ioe){}
 
 			//Get the data from players
-			byte[] buf = new byte[256];
+			byte[] buf = new byte[5000];
 			DatagramPacket packet = new DatagramPacket(buf, buf.length);
+			HashMap<String, RaceCar> racecars = null;
 			try{
 				socket.receive(packet);
-			}catch(Exception ioe){/*lazy exception handling :)*/}
+				ByteArrayInputStream byteStream = new ByteArrayInputStream(buf);
+				ObjectInputStream is = new ObjectInputStream(byteStream);
+				racecars = (HashMap<String, RaceCar>)is.readObject(); 					
+			}catch(Exception ioe){ }
 
-			serverData=new String(buf);
-			serverData=serverData.trim();
+			//get server message stored in race car
+			try{
+				int temp=0;
+				for(String key : racecars.keySet()){
+					if(temp==0){
+						serverData = racecars.get(key).message;
+						temp++;
+					}
+				}
+			}catch(Exception e){}
+
 			if (!connected && serverData.startsWith("CONNECTED")){
 				connected=true;
+				myCar.gameStage = 2;
+				send();
 				System.out.println("Connected.");
 			}else if (!connected){
-				System.out.println("Connecting..");
+				// System.out.println("Connecting..");
 				x = map.startX;
 				y = map.startY;
-				send("CONNECT "+name + " " + map.startX + " " + map.startY);
+				myCar.setX(x);
+				myCar.setY(y);
+				send();
 			}else if (connected){
 				//player names
-				/*if (serverData.startsWith("INITIALPLACES:")){
-					String[] playersInfo = serverData.split(":");
-					for (int i=0;i<playersInfo.length;i++){
-						System.out.println(playersInfo[i]);
-					}
-				}*/
 				if (serverData.startsWith("NAMES")){
 					String[] playersInfo = serverData.split(" ");
 					int tempCount = Integer.parseInt(playersInfo[1]);
@@ -205,31 +220,31 @@ public class GameLoop extends JPanel implements Runnable{
 					}
 				}else if (serverData.startsWith("START")){
 					start = true;
+					myCar.gameStage = 3;
+					send();
 				}
-				else if (serverData.startsWith("PLAYER")){
-					String[] playersInfo = serverData.split(":");
+				else if (serverData.startsWith("PLAYER") && racecars != null){
 					Graphics2D g = (Graphics2D) mapCopy.getGraphics();
 					g.setBackground(new Color(255,255,255,0));
 					g.clearRect(0,0, map.width, map.height);
-					for (int i=0;i<playersInfo.length;i++){
-						String[] playerInfo = playersInfo[i].split(" ");
-						String pname =playerInfo[1];
-						int x = Integer.parseInt(playerInfo[2]);
-						int y = Integer.parseInt(playerInfo[3]);
-						int pAngle = Integer.parseInt(playerInfo[4]);
+
+					for(String key : racecars.keySet()){
+						RaceCar playerInfo= (RaceCar)racecars.get(key);
+						playerInfo.setImage(playerInfo.getPlayerType());
+						int x = playerInfo.getX();
+						int y = playerInfo.getY();
+						int pAngle = playerInfo.getAngle();
 
 						// Rotation 
 						double rotationRequired = Math.toRadians (pAngle);
-						double locationX = myCar.img.getWidth() / 2;
-						double locationY = myCar.img.getHeight() / 2;
+						double locationX = playerInfo.getImage().getWidth() / 2;
+						double locationY = playerInfo.getImage().getHeight() / 2;
 						AffineTransform tx = AffineTransform.getRotateInstance(rotationRequired, locationX, locationY);
 						AffineTransformOp op = new AffineTransformOp(tx, AffineTransformOp.TYPE_BILINEAR);
 
 						// Drawing the rotated image
-						mapCopy.getGraphics().drawImage(op.filter(myCar.img, null), x,y,null);
-						// mapCopy.getGraphics().fillOval(x, y, 5, 5);
-						// mapCopy.getGraphics().drawImage(myCar.img, x,y,null);
-						mapCopy.getGraphics().drawString(pname,x-10,y+30);
+						mapCopy.getGraphics().drawImage(op.filter(playerInfo.getImage(), null), x,y,null);
+						mapCopy.getGraphics().drawString(playerInfo.getName(),x-10,y+30);
 					}
 					//show the changes
 					frame.repaint();
@@ -303,8 +318,13 @@ public class GameLoop extends JPanel implements Runnable{
 						chat.requestFocus();
 						break;
 			}
-			if (prevX != x || prevY != y){
-				send("PLAYER "+name+" "+x+" "+y+" "+angle);
+			if ((prevX != x || prevY != y) && (myCar.gameStage==3)){
+				
+				myCar.setX(x);
+				myCar.setY(y);
+				myCar.setAngle(angle);
+				myCar.message = "PLAYER ";
+				send();
 			}
 			camera.tick(x,y);
 		}

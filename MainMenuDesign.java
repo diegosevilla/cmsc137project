@@ -23,7 +23,7 @@ public class MainMenuDesign  implements Runnable{
 	static JComboBox ptypebox = null;	//player type
 	static JLabel nameLabel;
 
-	static int playertype=1;	//type of players
+	static String playertype="launcha";	//car type of player, default is launcha
 	static int pnum;	//number of players
 	static int pcount = 0;	//number of players
 	static JTextPane plist = new JTextPane();	//player list
@@ -119,10 +119,13 @@ public class MainMenuDesign  implements Runnable{
 			public void itemStateChanged(ItemEvent itemEvent){
 				if(ptypebox.getSelectedItem().toString() == "LAUNCHA"){
 					cardLayout.show(cardPanel, "1");
+					playertype = "launcha";
 				}else if(ptypebox.getSelectedItem().toString() == "RAMMA"){
 					cardLayout.show(cardPanel, "2");
+					playertype = "ramma";
 				}else if(ptypebox.getSelectedItem().toString() == "GUNNA"){
 					cardLayout.show(cardPanel, "3");
+					playertype = "gunna";
 				}
 			}
 		});
