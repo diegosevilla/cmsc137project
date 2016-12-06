@@ -8,16 +8,16 @@ import java.io.IOException;
 import javax.swing.text.*;
 
 
-public class MainMenuDesign  implements Runnable{
+public class MadRace  implements Runnable{
 	//Create and set up the window.
 	static JFrame mainFrame = new JFrame("MadRace BETA");
 	static Container mainC = mainFrame.getContentPane();
 	static Container mainMenu = new Container();
-	static Container howTo = new Container();	
-	static Container startPanel = new Container();	
-	static Container lobbyPanel = new Container();	
+	static Container howTo = new Container();
+	static Container startPanel = new Container();
+	static Container lobbyPanel = new Container();
 	static int htpCount = 1;	//for traversing "Help" images
-	
+
 	static String name;
 	static JTextField getName = new JTextField();
 	static JComboBox ptypebox = null;	//player type
@@ -29,7 +29,7 @@ public class MainMenuDesign  implements Runnable{
 	static JTextPane plist = new JTextPane();	//player list
 
 	static String server;
-	static boolean isServer; 
+	static boolean isServer;
 	static GameServer gameServer;
 	static GameLoop gameLoop;
 
@@ -41,10 +41,10 @@ public class MainMenuDesign  implements Runnable{
 
 		JPanel panel = new JPanel();
 		ImagePanel menu = new ImagePanel(new ImageIcon("piks/MadRace.jpg").getImage());
-				  
+
 		mainMenu.setLayout(new BorderLayout());
 		mainMenu.setPreferredSize(new Dimension(500, 550));
-		mainMenu.add(menu, BorderLayout.CENTER); 
+		mainMenu.add(menu, BorderLayout.CENTER);
 
 		JButton newGameButton = new JButton("Start Game");
 		newGameButton.addActionListener(new ActionListener(){
@@ -100,7 +100,7 @@ public class MainMenuDesign  implements Runnable{
 
 		startPanel.setLayout(new BorderLayout());
 		startPanel.setPreferredSize(new Dimension(500, 550));
-		startPanel.add(cardPanel, BorderLayout.CENTER); 
+		startPanel.add(cardPanel, BorderLayout.CENTER);
 
 		//get player name
 		getName.setPreferredSize(new Dimension(120, 25));
@@ -142,7 +142,7 @@ public class MainMenuDesign  implements Runnable{
 					pnum = Integer.parseInt(JOptionPane.showInputDialog("Enter number of players: "));
 					gameServer = new GameServer(pnum);
 					new ChatServer();
-					(new Thread(new MainMenuDesign())).start();
+					(new Thread(new MadRace())).start();
 					try{ gameLoop = new GameLoop(server, name, playertype);
 					}catch(Exception f){}
 
@@ -168,7 +168,7 @@ public class MainMenuDesign  implements Runnable{
 				howTo.setVisible(false);
 				mainMenu.setVisible(false);
 				lobbyPanel.setVisible(true);
-				(new Thread(new MainMenuDesign())).start();
+				(new Thread(new MadRace())).start();
 				try{ gameLoop = new GameLoop(server, name, playertype);
 				}catch(Exception f){}
 			}
@@ -211,7 +211,7 @@ public class MainMenuDesign  implements Runnable{
 
 		howTo.setLayout(new BorderLayout());
 		howTo.setPreferredSize(new Dimension(500, 550));
-		howTo.add(cardPanel, BorderLayout.CENTER); 
+		howTo.add(cardPanel, BorderLayout.CENTER);
 
 		JButton menuButton = new JButton("Main Menu");
 		panel.add(menuButton);
@@ -267,10 +267,10 @@ public class MainMenuDesign  implements Runnable{
 		nameLabel = new JLabel("MadRace", JLabel.CENTER);
 		nameLabel.setFont(new Font("Serif", Font.BOLD, 60));
 		lobbyPanel.add(nameLabel, BorderLayout.NORTH);
-		
+
 		//set of players
 		JScrollPane pscroll = new JScrollPane(plist);		//player scrollable
-		plist.setPreferredSize(new Dimension(450, 428));	
+		plist.setPreferredSize(new Dimension(450, 428));
 		plist.setEditable(false);
 		plist.setFocusable(false);
 		plist.setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
@@ -297,7 +297,7 @@ public class MainMenuDesign  implements Runnable{
 		downPanel.add(startButton);
 		startButton.addActionListener(new ActionListener(){
 			public void actionPerformed(ActionEvent e){
-				try{ 
+				try{
 					if(gameLoop.start){
 						JOptionPane.showMessageDialog(new JPanel(), "Game already in progress. Catch up!", "Warning", JOptionPane.WARNING_MESSAGE);
 					}else{
@@ -324,7 +324,7 @@ public class MainMenuDesign  implements Runnable{
 	}
 
 	public void run() {
-		
+
 		while(true){
 			try{
 				//add to list of players in lobby
