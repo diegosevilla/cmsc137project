@@ -9,7 +9,7 @@ public class RaceCar implements Serializable{
 	private final int GAME_START = 2;
 	private final int IN_PROGRESS = 3;
 
-	private int x, y, angle, health, ammo, place;
+	private int x, y, angle, health, ammo, place, ammoLimit;
 	private String name;
 	private String playertype;
 	private InetAddress address;
@@ -17,16 +17,24 @@ public class RaceCar implements Serializable{
 	transient BufferedImage img;
 	public int gameStage;
 	public String message;
-	
+
 	public RaceCar(String name, int x, int y, String playertype){
  		this.x = x;
  		this.y = y;
  		this.name = name;
  		this.playertype = playertype;
- 		this.health = 100;
  		this.place = 1;
- 		if(playertype == "ramma") this.ammo = 0;
- 		else this.ammo = 50;
+ 		if(playertype.equals("ramma")){
+			this.ammo = 0;
+			this.health = 200;
+		}else if(playertype.equals("gunna")){
+			this.ammo = 200;
+			this.health = 100;
+		} else if(playertype.equals("launcha")){
+			this.ammo = 50;
+			this.health = 100;
+		}
+		this.ammoLimit = this.ammo;
  		try{
  			this.img = ImageIO.read(new File("piks/t" + playertype + ".png"));
  		}catch(Exception e){};
@@ -45,9 +53,9 @@ public class RaceCar implements Serializable{
  			this.img = ImageIO.read(new File("piks/t" + playertype + ".png"));
  		}catch(Exception e){}
 	}
-	
+
 	/* setters and getters*/
-	
+
 	public int getX() {
 		return x;
 	}
@@ -100,6 +108,10 @@ public class RaceCar implements Serializable{
 		return ammo;
 	}
 
+	public int getAmmoLimit() {
+		return ammoLimit;
+	}
+
 	public void setAmmo(int ammo) {
 		this.ammo = ammo;
 	}
@@ -138,7 +150,7 @@ public class RaceCar implements Serializable{
 	public void setPort(int port) {
 		this.port = port;
 	}
-	
+
 	public String toString(){
 		String retval="";
 		retval+="PLAYER ";
@@ -148,5 +160,5 @@ public class RaceCar implements Serializable{
 		retval+=angle;
 		return retval;
 	}
-	
+
 }

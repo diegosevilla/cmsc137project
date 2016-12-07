@@ -8,6 +8,7 @@ import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
 import java.awt.event.MouseEvent;
+import java.awt.event.MouseListener;
 import java.awt.event.MouseMotionAdapter;
 import java.awt.image.BufferedImage;
 import java.awt.BorderLayout;
@@ -49,7 +50,7 @@ public class GameLoop extends JPanel implements Runnable{
 	int direction;
 
 	RaceCar myCar;
-	int angle=180;
+	int angle=90;
 
 	String server="";
 	boolean connected=false;
@@ -75,7 +76,7 @@ public class GameLoop extends JPanel implements Runnable{
 
 	public GameLoop(String server,String name, String playertype) throws Exception{
 		plist = new ArrayList();
-		
+
 		this.server=server;
 		this.name=name;
 
@@ -129,7 +130,7 @@ public class GameLoop extends JPanel implements Runnable{
 			@Override
 			public void actionPerformed(ActionEvent e) {
 				chat.setFocusable(false);
-				try { 
+				try {
 					out.writeUTF(name+": "+chat.getText() + "\n");
 					out.flush();
 				}catch (Exception err){}
@@ -145,7 +146,7 @@ public class GameLoop extends JPanel implements Runnable{
 					DataInputStream in = new DataInputStream(inFromServer);
 					String msg = "";
 					while(true){
-						msg = in.readUTF(); 
+						msg = in.readUTF();
 						doc.insertString(doc.getLength(), msg,style);
 					}
 				}catch(Exception e){}
@@ -182,7 +183,7 @@ public class GameLoop extends JPanel implements Runnable{
 		healthLabel.setFont(new Font("Serif", Font.BOLD, 15));
 		JLabel ammolbl = new JLabel("Ammo:", JLabel.CENTER);
 		ammolbl.setFont(new Font("Serif", Font.BOLD, 15));
-		ammoLabel = new JLabel(Integer.toString(myCar.getAmmo()) +" / 50", JLabel.CENTER);
+		ammoLabel = new JLabel(Integer.toString(myCar.getAmmo()) +" / " + myCar.getAmmoLimit(), JLabel.CENTER);
 		ammoLabel.setFont(new Font("Serif", Font.BOLD, 25));
 		JLabel placelbl = new JLabel("Rank:", JLabel.CENTER);
 		placelbl.setFont(new Font("Serif", Font.BOLD, 15));
@@ -205,13 +206,12 @@ public class GameLoop extends JPanel implements Runnable{
 		// frame.getContentPane().add(statsPanel, BorderLayout.SOUTH);
 
 		//create the buffer
-		map = new Map("try.txt", 500, 550);
+		map = new Map("try.txt", 550, 550);
 		mapCopy = new BufferedImage(map.width, map.height, BufferedImage.TYPE_INT_ARGB);
 		Graphics2D g = (Graphics2D) mapCopy.getGraphics();
 		camera = new Camera(map.startX, map.startY);
 		g.setBackground(new Color(255,255,255,255));
 		frame.addKeyListener(new KeyHandler());
-
 		t.start();
 		listenForMessage.start();
 	}
@@ -245,7 +245,7 @@ public class GameLoop extends JPanel implements Runnable{
 				socket.receive(packet);
 				ByteArrayInputStream byteStream = new ByteArrayInputStream(buf);
 				ObjectInputStream is = new ObjectInputStream(byteStream);
-				racecars = (HashMap<String, RaceCar>)is.readObject(); 					
+				racecars = (HashMap<String, RaceCar>)is.readObject();
 			}catch(Exception ioe){ }
 
 			//get server message stored in race car
@@ -299,7 +299,7 @@ public class GameLoop extends JPanel implements Runnable{
 						int y = playerInfo.getY();
 						int pAngle = playerInfo.getAngle();
 
-						// Rotation 
+						// Rotation
 						double rotationRequired = Math.toRadians (pAngle);
 						double locationX = playerInfo.getImage().getWidth() / 2;
 						double locationY = playerInfo.getImage().getHeight() / 2;
@@ -312,6 +312,10 @@ public class GameLoop extends JPanel implements Runnable{
 					}
 					//show the changes
 					frame.repaint();
+				} else if(serverData.startsWith("GameOver")){
+						String data[] = serverData.split(" ");
+						System.out.println("winner si " + data[1]);
+						break;
 				}
 			}
 		}
@@ -335,7 +339,6 @@ public class GameLoop extends JPanel implements Runnable{
 		g2d.translate(-camera.x, -camera.y);
 	}
 
-
 	class KeyHandler extends KeyAdapter{
 		public void keyReleased(KeyEvent ke){
 		   switch (ke.getKeyCode()){
@@ -343,6 +346,7 @@ public class GameLoop extends JPanel implements Runnable{
 			 case KeyEvent.VK_W:yspeed = 2;break;
 			 case KeyEvent.VK_D:xspeed = 2; break;// % 640;break;
 			 case KeyEvent.VK_A:xspeed = 2; break;// % 640;break;
+			 case KeyEvent.VK_ENTER:xspeed = 0; break;
 		   }
 		 }
 
@@ -350,30 +354,30 @@ public class GameLoop extends JPanel implements Runnable{
 			prevX=x;prevY=y;
 			switch (ke.getKeyCode()){
 				case KeyEvent.VK_S:
-						if(map.checkCollision(x,y+yspeed)){
-							y += yspeed; 
-							yspeed += yspeed == 5? 0 : 1;
+						if(map.checkCollision(x,y+yspeed, ke.getKeyCode())){
+							y += yspeed;
+							yspeed += yspeed == 8? 0 : 1;
 							angle = 180;
 						}
-						break; // % 640;break;
+						break;
 				case KeyEvent.VK_W:
-						if(map.checkCollision(x,y-yspeed)){
+						if(map.checkCollision(x,y-yspeed,ke.getKeyCode() )){
 							y -=  yspeed;
-							yspeed += yspeed == 5? 0 : 1;
+							yspeed += yspeed == 8? 0 : 1;
 							angle = 0;
 						}
 						break;
 				case KeyEvent.VK_D:
-						if(map.checkCollision(x+xspeed,y)){
+						if(map.checkCollision(x+xspeed,y,ke.getKeyCode() )){
 							x += xspeed;
-							xspeed += xspeed == 5? 0 : 1;
+							xspeed += xspeed == 8? 0 : 1;
 							angle = 90;
 						}
 						break;
 				case KeyEvent.VK_A:
-						if(map.checkCollision(x-xspeed, y)){
+						if(map.checkCollision(x-xspeed, y, ke.getKeyCode())){
 							x -=  xspeed;
-							xspeed += xspeed == 5? 0 : 1;
+							xspeed += xspeed == 8? 0 : 1;
 							angle = 270;
 						}
 						break;
@@ -383,14 +387,20 @@ public class GameLoop extends JPanel implements Runnable{
 						break;
 			}
 			if ((prevX != x || prevY != y) && (myCar.gameStage==3)){
-				
+
 				myCar.setX(x);
 				myCar.setY(y);
 				myCar.setAngle(angle);
 				myCar.message = "PLAYER ";
+				System.out.println("curr " + x + " : " + y);
+				if(map.checkWin(x,y, angle)){
+					System.out.println("end!");
+					myCar.message = "GameOver ";
+				}
 				send();
 			}
 			camera.tick(x,y);
 		}
 	}
+
 }

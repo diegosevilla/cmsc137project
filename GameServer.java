@@ -101,7 +101,7 @@ public class GameServer implements Runnable{
 				serverSocket.receive(packet);
 				ByteArrayInputStream byteStream = new ByteArrayInputStream(buf);
 				ObjectInputStream is = new ObjectInputStream(byteStream);
-				racecar = (RaceCar)is.readObject(); 					
+				racecar = (RaceCar)is.readObject();
 				racecar.setAddress(packet.getAddress());
 				racecar.setPort(packet.getPort());
 			}catch(Exception ioe){ }
@@ -111,7 +111,7 @@ public class GameServer implements Runnable{
 			case WAITING :
 				if(racecar.gameStage == 1){
 					int x = racecar.getX() + 40*(playerCount % 3);
-	 				int y = racecar.getY() + 40*(playerCount / 3);				
+	 				int y = racecar.getY() + 40*(playerCount / 3);
 	  				if(gameState.containsKey(racecar.getName()))
 	 					continue;
 
@@ -145,6 +145,9 @@ public class GameServer implements Runnable{
 					gameState.put(racecar.getName(), racecar);
 					//Send to all the updated game state
 					broadcast("PLAYER "+racecar.getName());
+				} else if(racecar.message!=null && racecar.message.startsWith("GameOver")){
+					broadcast("GameOver "  + racecar.getName());
+					return;
 				}
 				break;
 			}

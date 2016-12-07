@@ -5,6 +5,7 @@ import java.awt.image.BufferedImage;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
+import java.awt.event.KeyEvent;
 
 public class Map extends JPanel{
 	int height = 0;
@@ -12,14 +13,14 @@ public class Map extends JPanel{
 	int mapLegend[][];
 	int pixSizeWidth;
 	int pixSizeHeight;
-	int startX;
-	int startY;
+	int startX = -1;
+	int startY = -1;
 
 	BufferedImage mapImage;
 
 	public Map(String filename, int width, int height){
-		this.height = height;
-		this.width = width;
+		this.height = height*2;
+		this.width = width*2;
 		int row = 0;
 		this.setPreferredSize(new Dimension(width, height));
 		try{
@@ -27,8 +28,9 @@ public class Map extends JPanel{
 			String line = br.readLine();
 			String[] pixDim = line.split(" ");
 			mapLegend = new int[Integer.parseInt(pixDim[1])][Integer.parseInt(pixDim[0])];
-			pixSizeWidth = width/Integer.parseInt(pixDim[0]);
-			pixSizeHeight = height/Integer.parseInt(pixDim[1]);
+			pixSizeWidth = this.width/Integer.parseInt(pixDim[0]);
+			pixSizeHeight = this.height/Integer.parseInt(pixDim[1]);
+			System.out.println("pixSizeH = " + pixSizeHeight + " : pixSizeW = " + pixSizeWidth);
 			while((line = br.readLine()) != null) {
 				String[] textures = line.split(" ");
 				for (int col = 0; col < textures.length; col++) {
@@ -53,8 +55,8 @@ public class Map extends JPanel{
 					switch(mapLegend[i][j]){
 						case 1:
 							img = ImageIO.read(new File("piks/start.png"));
-							if(startX == 0) startX = j*pixSizeHeight;
-							if(startY == 0) startY = i*pixSizeWidth;
+							if(startX == -1) startX = j*pixSizeHeight;
+							if(startY == -1) startY = i*pixSizeWidth;
 							break;
 						case 2:
 							img = ImageIO.read(new File("piks/path.png"));
@@ -62,7 +64,7 @@ public class Map extends JPanel{
 						case 3:
 							img = ImageIO.read(new File("piks/wall.png"));
 							break;
-						default:
+						case 4:
 							img = ImageIO.read(new File("piks/brick.png"));
 					}
 
@@ -91,10 +93,35 @@ public class Map extends JPanel{
 		return dimg;
 	}
 
-	public boolean checkCollision(int x, int y){
-		x = x/pixSizeHeight;
-		y = y/pixSizeWidth;
-		if(mapLegend[y][x] == 2 || mapLegend[y][x] == 1) return true;
+	public boolean checkCollision(int x, int y, int dir){
+		switch(dir){
+			case KeyEvent.VK_S:
+					x = x/ pixSizeWidth;
+					y = (y+25)/pixSizeHeight;
+					break;
+			case KeyEvent.VK_W:
+					x = x/pixSizeWidth;
+					y = y/pixSizeHeight;
+					break;
+			case KeyEvent.VK_D:
+					x = (x+35)/pixSizeWidth;
+					y = y/pixSizeHeight;
+					break;
+			case KeyEvent.VK_A:
+					x = x/pixSizeWidth;
+					y = y/pixSizeHeight;
+					break;
+		}
+		if(mapLegend[y][x] == 3) return false;
+		return true;
+	}
+
+	public boolean checkWin(int x, int y, int dir){
+		x = x/pixSizeWidth;
+		y = y/pixSizeHeight;
+		System.out.print("map[" + y +"]" + "[" + x + "] = ");
+		System.out.println(mapLegend[y][x]);
+		if(mapLegend[y][x] == 4) return true;
 		return false;
 	}
 }
