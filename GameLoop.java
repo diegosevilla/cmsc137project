@@ -57,6 +57,7 @@ public class GameLoop extends JPanel implements Runnable{
 	boolean start=false;
 	Map map;
 	BufferedImage mapCopy;
+	HashMap<String, RaceCar> racecars = null;
 
 	ArrayList plist;
 	int playerCount=0;
@@ -66,6 +67,15 @@ public class GameLoop extends JPanel implements Runnable{
 	Timer timer;
 	JLabel ammoLabel;
 	JLabel placeLabel;
+
+	// three image makes one bomb
+	BufferedImage image1, image2, image3 = null;
+	Vector<Bomb> bombs = new Vector<Bomb>();
+
+	//bullet images
+	BufferedImage bullet1, bullet2 = null;
+	Vector<Bullet> bullets = new Vector<Bullet>();
+
 
 	static final int WIDTH = 500;
 	static final int HEIGHT = 700;
@@ -212,6 +222,19 @@ public class GameLoop extends JPanel implements Runnable{
 		camera = new Camera(map.startX, map.startY);
 		g.setBackground(new Color(255,255,255,255));
 		frame.addKeyListener(new KeyHandler());
+
+		//load bullet images
+		bullet1 = ImageIO.read(new File("piks/gbullet.png"));	//gun bullet
+		bullet2 = ImageIO.read(new File("piks/rbullet.png"));	//rocket launcher bullet
+
+		//load bomb images
+		image1 = ImageIO.read(new File("piks/bomb_1.gif"));
+		image2 = ImageIO.read(new File("piks/bomb_2.gif"));
+		image3 = ImageIO.read(new File("piks/bomb_3.gif"));
+		// create a bomb
+		Bomb newbomb = new Bomb(myCar.getX(), myCar.getY());
+		bombs.add(newbomb);
+
 		t.start();
 		listenForMessage.start();
 	}
@@ -240,7 +263,6 @@ public class GameLoop extends JPanel implements Runnable{
 			//Get the data from players
 			byte[] buf = new byte[5000];
 			DatagramPacket packet = new DatagramPacket(buf, buf.length);
-			HashMap<String, RaceCar> racecars = null;
 			try{
 				socket.receive(packet);
 				ByteArrayInputStream byteStream = new ByteArrayInputStream(buf);
@@ -312,11 +334,49 @@ public class GameLoop extends JPanel implements Runnable{
 					}
 					//show the changes
 					frame.repaint();
+
 				} else if(serverData.startsWith("GameOver")){
 						String data[] = serverData.split(" ");
 						System.out.println("winner si " + data[1]);
 						break;
 				}
+				Graphics2D g = (Graphics2D) mapCopy.getGraphics();
+				g.setBackground(new Color(255,255,255,0));
+				g.clearRect(0,0, map.width, map.height);
+
+				//Draw fired bullets
+				for (int i = 0; i < bullets.size(); i++) {
+					Bullet b = bullets.get(i);
+					mapCopy.getGraphics().drawImage(b.img, b.x, b.y, null);
+					b.minusLen();
+					if (b.len == 0) {
+						bullets.remove(i);
+						i--;
+					}
+				}
+
+				for(String key : racecars.keySet()){
+					RaceCar playerInfo= (RaceCar)racecars.get(key);
+					playerInfo.setImage(playerInfo.getPlayerType());
+					int x = playerInfo.getX();
+					int y = playerInfo.getY();
+					int pAngle = playerInfo.getAngle();
+
+					// Rotation
+					double rotationRequired = Math.toRadians(pAngle);
+					double locationX = playerInfo.getImage().getWidth() / 2;
+					double locationY = playerInfo.getImage().getHeight() / 2;
+					AffineTransform tx = AffineTransform.getRotateInstance(rotationRequired, locationX, locationY);
+					AffineTransformOp op = new AffineTransformOp(tx, AffineTransformOp.TYPE_BILINEAR);
+
+					// Drawing the rotated image
+					mapCopy.getGraphics().drawImage(op.filter(playerInfo.getImage(), null), x,y,null);
+					mapCopy.getGraphics().drawString(playerInfo.getName(),x-10,y+30);
+
+					//Draw small bomb on car
+					//mapCopy.getGraphics().drawImage(image3, x, y, 30, 30, null);
+			}
+			frame.repaint();
 			}
 		}
 	}
@@ -385,6 +445,21 @@ public class GameLoop extends JPanel implements Runnable{
 						chat.setFocusable(true);
 						chat.requestFocus();
 						break;
+				case KeyEvent.VK_SPACE:
+						if(myCar.getAmmo() == 0) break;
+						if(myCar.getPlayerType()!="ramma"){
+							// fire bullet
+							Bullet newbullet = new Bullet(myCar.getX(), myCar.getY());
+							if(myCar.getPlayerType()=="launcha"){
+								newbullet.setImg(bullet2);
+							}else if(myCar.getPlayerType()=="gunna"){
+								newbullet.setImg(bullet1);
+							}
+							bullets.add(newbullet);
+							myCar.setAmmo(1);
+							ammoLabel.setText(Integer.toString(myCar.getAmmo()) +" / 50");
+						}
+						break;
 			}
 			if ((prevX != x || prevY != y) && (myCar.gameStage==3)){
 
@@ -402,5 +477,110 @@ public class GameLoop extends JPanel implements Runnable{
 			camera.tick(x,y);
 		}
 	}
+}
 
+
+
+class Bomb {
+
+	public int getX() {
+		return x;
+	}
+
+	public void setX(int x) {
+		this.x = x;
+	}
+
+	public int getY() {
+		return y;
+	}
+
+	public void setY(int y) {
+		this.y = y;
+	}
+
+	public int getLife() {
+		return life;
+	}
+
+	public void setLife(int life) {
+		this.life = life;
+	}
+
+	public boolean isLive() {
+		return isLive;
+	}
+
+	public void setLive(boolean isLive) {
+		this.isLive = isLive;
+	}
+
+	int x, y;
+	int life = 9;
+	boolean isLive = true;
+
+	public Bomb(int x, int y) {
+		this.x = x;
+		this.y = y;
+		this.life = 9;
+	}
+
+	public void lifeDown() {
+		if (life > 0)
+			life--;
+		else
+			this.isLive = false;
+	}
+}
+
+
+
+class Bullet {
+	BufferedImage img;
+	int x, y;
+	int len;	//distance to be traveled by bullet
+	boolean isLive = true;	//still not colliding with wall or cars
+
+	public Bullet(int x, int y) {
+		this.x = x;
+		this.y = y;
+		this.len = 5;
+	}
+
+	public int getX() {
+		return x;
+	}
+
+	public void setX(int x) {
+		this.x = x;
+	}
+
+	public int getY() {
+		return y;
+	}
+
+	public void setY(int y) {
+		this.y = y;
+	}
+
+	public int getLen() {
+		return len;
+	}
+
+	public void minusLen() {
+		this.len = this.len-1;
+		this.x = this.x + 10;
+	}
+
+	public boolean isLive() {
+		return isLive;
+	}
+
+	public void setLive(boolean isLive) {
+		this.isLive = isLive;
+	}
+
+	public void setImg(BufferedImage img) {
+		this.img = img;
+	}
 }
