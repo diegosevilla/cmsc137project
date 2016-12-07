@@ -328,8 +328,9 @@ public class GameLoop extends JPanel implements Runnable{
 					g.setBackground(new Color(255,255,255,0));
 					g.clearRect(0,0, map.width, map.height);
 
-					if(racecars.size() == 1)
+					if(racecars.size() == 1){
 						new YouWinWindow(frame);
+					}
 					for(String key : racecars.keySet()){
 						RaceCar playerInfo= (RaceCar)racecars.get(key);
 						playerInfo.setImage(playerInfo.getPlayerType());
@@ -402,8 +403,10 @@ public class GameLoop extends JPanel implements Runnable{
 								}
 							}catch(Exception bd){}
 						}
-						if(myCar.getHealth() <= 0)
+						if(myCar.getHealth() <= 0){
 								new GameOverWindow(frame);
+								break;
+						}
 					}
 					//show the changes
 					frame.repaint();
