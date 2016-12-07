@@ -407,7 +407,6 @@ public class GameLoop extends JPanel implements Runnable{
 			 case KeyEvent.VK_W:yspeed = 2;break;
 			 case KeyEvent.VK_D:xspeed = 2; break;// % 640;break;
 			 case KeyEvent.VK_A:xspeed = 2; break;// % 640;break;
-			 case KeyEvent.VK_ENTER:xspeed = 0; break;
 		   }
 		 }
 
@@ -450,15 +449,17 @@ public class GameLoop extends JPanel implements Runnable{
 						if(myCar.getAmmo() == 0) break;
 						if(myCar.getPlayerType()!="ramma"){
 							// fire bullet
-							Bullet newbullet = new Bullet(myCar.getX(), myCar.getY());
-							if(myCar.getPlayerType()=="launcha"){
-								newbullet.setImg(bullet2);
-							}else if(myCar.getPlayerType()=="gunna"){
-								newbullet.setImg(bullet1);
+							if(myCar.getAmmo() != 0){
+								Bullet newbullet = new Bullet(myCar.getX(), myCar.getY());
+								if(myCar.getPlayerType()=="launcha"){
+									newbullet.setImg(bullet2);
+								}else if(myCar.getPlayerType()=="gunna"){
+									newbullet.setImg(bullet1);
+								}
+								bullets.add(newbullet);
+								myCar.setAmmo(myCar.getAmmo() - 1);
+								ammoLabel.setText(Integer.toString(myCar.getAmmo()) +" / "+myCar.getAmmoLimit());
 							}
-							bullets.add(newbullet);
-							myCar.setAmmo(1);
-							ammoLabel.setText(Integer.toString(myCar.getAmmo()) +" / 50");
 						}
 						break;
 			}
