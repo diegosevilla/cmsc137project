@@ -34,6 +34,7 @@ import java.util.ArrayList;
 import java.util.*;
 import java.awt.geom.AffineTransform;
 import java.awt.image.AffineTransformOp;
+import javax.imageio.ImageIO;
 
 public class GameLoop extends JPanel implements Runnable{
 	DatagramSocket socket = new DatagramSocket();
