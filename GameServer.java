@@ -48,8 +48,9 @@ public class GameServer implements Runnable{
 	public void broadcast(String msg){
 		for(String key : gameState.keySet()){
 			RaceCar player= gameState.get(key);
-	 		player.message = msg;
+			player.message = msg;
 			gameState.put(player.getName(), player);
+
 		}
 		for(String key : gameState.keySet()){
 			RaceCar player= gameState.get(key);
@@ -110,18 +111,15 @@ public class GameServer implements Runnable{
 			switch(gameStage){
 			case WAITING :
 				if(racecar.gameStage == 1){
-					int x = racecar.getX() + 40*(playerCount % 3);
-	 				int y = racecar.getY() + 40*(playerCount / 3);
 	  				if(gameState.containsKey(racecar.getName()))
 	 					continue;
-
 	 				plist.add(racecar.getName());
 					gameState.put(racecar.getName(),racecar);
 					broadcast("CONNECTED "+racecar.getName());
 	  				System.out.println(racecar.getName()+" CONNECTED");
 
 					playerCount++;
-					System.out.println(playerCount);
+					//System.out.println(playerCount);
 
 					if (playerCount==numOfPlayers){
 						gameStage=GAME_START;
@@ -141,9 +139,13 @@ public class GameServer implements Runnable{
 				break;
 			case IN_PROGRESS:
 				if(racecar.message!=null && racecar.message.startsWith("PLAYER")){
-					gameState.put(racecar.getName(), racecar);
-					//Send to all the updated game state
+					if(racecar.getHealth() <= 0)
+						gameState.remove(racecar.getName());
+					else
+						gameState.put(racecar.getName(), racecar);
+					//1Send to all the updated game state
 					broadcast("PLAYER "+racecar.getName());
+
 				} else if(racecar.message!=null && racecar.message.startsWith("GameOver")){
 					broadcast("GameOver "  + racecar.getName());
 					gameStage = END_GAME;

@@ -3,13 +3,14 @@ import java.awt.image.BufferedImage;
 import javax.imageio.ImageIO;
 import java.io.File;
 import java.io.Serializable;
+import java.util.*;
 
 public class RaceCar implements Serializable{
 	private final int WAITING = 1;
 	private final int GAME_START = 2;
 	private final int IN_PROGRESS = 3;
 
-	private int x, y, angle, health, ammo, place, ammoLimit;
+	private int x, y, angle, health, ammo, place, ammoLimit, maxHealth;
 	private String name;
 	private String playertype;
 	private InetAddress address;
@@ -17,10 +18,33 @@ public class RaceCar implements Serializable{
 	transient BufferedImage img;
 	public int gameStage;
 	public String message;
+	public Vector<Bullet> bullets = new Vector<Bullet>();
 
 	public RaceCar(String name, int x, int y, String playertype){
  		this.x = x;
  		this.y = y;
+ 		this.name = name;
+ 		this.playertype = playertype;
+ 		this.place = 1;
+ 		if(playertype.equals("ramma")){
+			this.ammo = 0;
+			this.health = 200;
+		}else if(playertype.equals("gunna")){
+			this.ammo = 200;
+			this.health = 100;
+		} else if(playertype.equals("launcha")){
+			this.ammo = 50;
+			this.health = 100;
+		}
+		this.ammoLimit = this.ammo;
+		this.maxHealth = this.health;
+ 		try{
+ 			this.img = ImageIO.read(new File("piks/t" + playertype + ".png"));
+ 		}catch(Exception e){};
+ 		this.gameStage = 0;
+ 	}
+
+ 	public RaceCar(String name, String playertype){
  		this.name = name;
  		this.playertype = playertype;
  		this.place = 1;
@@ -105,6 +129,7 @@ public class RaceCar implements Serializable{
 	}
 
 	public void damage(int damage) {
+		if(this.health <= 0) return;
 		this.health -= damage;
 	}
 
