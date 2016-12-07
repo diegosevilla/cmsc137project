@@ -40,6 +40,7 @@ public class GameLoop extends JPanel implements Runnable{
 	DatagramSocket socket = new DatagramSocket();
 	private static Socket client;
 
+	private boolean[] keys = new boolean[256];
 	JFrame frame= new JFrame();
 	JPanel bottomPanel = new JPanel();
 	JPanel southPanel = new JPanel();
@@ -58,6 +59,7 @@ public class GameLoop extends JPanel implements Runnable{
 	boolean start=false;
 	Map map;
 	BufferedImage mapCopy;
+	BufferedImage bulletMap;
 	HashMap<String, RaceCar> racecars = null;
 
 	ArrayList plist;
@@ -219,6 +221,7 @@ public class GameLoop extends JPanel implements Runnable{
 		//create the buffer
 		map = new Map("try.txt", 550, 550);
 		mapCopy = new BufferedImage(map.width, map.height, BufferedImage.TYPE_INT_ARGB);
+		bulletMap = new BufferedImage(map.width, map.height, BufferedImage.TYPE_INT_ARGB);
 		Graphics2D g = (Graphics2D) mapCopy.getGraphics();
 		camera = new Camera(map.startX, map.startY);
 		g.setBackground(new Color(255,255,255,255));
@@ -280,7 +283,8 @@ public class GameLoop extends JPanel implements Runnable{
 						temp++;
 					}
 				}
-			}catch(Exception e){}
+			}catch(Exception e){
+			}
 
 			if (!connected && serverData.startsWith("CONNECTED")){
 				connected=true;
@@ -314,14 +318,16 @@ public class GameLoop extends JPanel implements Runnable{
 					Graphics2D g = (Graphics2D) mapCopy.getGraphics();
 					g.setBackground(new Color(255,255,255,0));
 					g.clearRect(0,0, map.width, map.height);
-
 					for(String key : racecars.keySet()){
 						RaceCar playerInfo= (RaceCar)racecars.get(key);
 						playerInfo.setImage(playerInfo.getPlayerType());
 						int x = playerInfo.getX();
 						int y = playerInfo.getY();
 						int pAngle = playerInfo.getAngle();
-
+						if(myCar == playerInfo) {
+							myCar.damage(10);
+							timer.start();
+						}
 						// Rotation
 						double rotationRequired = Math.toRadians (pAngle);
 						double locationX = playerInfo.getImage().getWidth() / 2;
@@ -338,46 +344,23 @@ public class GameLoop extends JPanel implements Runnable{
 
 				} else if(serverData.startsWith("GameOver")){
 						String data[] = serverData.split(" ");
-						System.out.println("winner si " + data[1]);
+						System.out.println("winner " + data[1]);
 						break;
 				}
-				Graphics2D g = (Graphics2D) mapCopy.getGraphics();
+				//Draw fired bullets
+				Graphics2D g = (Graphics2D) bulletMap.getGraphics();
 				g.setBackground(new Color(255,255,255,0));
 				g.clearRect(0,0, map.width, map.height);
-
-				//Draw fired bullets
 				for (int i = 0; i < bullets.size(); i++) {
 					Bullet b = bullets.get(i);
-					mapCopy.getGraphics().drawImage(b.img, b.x, b.y, null);
+					bulletMap.getGraphics().drawImage(b.img, b.x, b.y, null);
 					b.minusLen();
 					if (b.len == 0) {
 						bullets.remove(i);
 						i--;
 					}
 				}
-
-				for(String key : racecars.keySet()){
-					RaceCar playerInfo= (RaceCar)racecars.get(key);
-					playerInfo.setImage(playerInfo.getPlayerType());
-					int x = playerInfo.getX();
-					int y = playerInfo.getY();
-					int pAngle = playerInfo.getAngle();
-
-					// Rotation
-					double rotationRequired = Math.toRadians(pAngle);
-					double locationX = playerInfo.getImage().getWidth() / 2;
-					double locationY = playerInfo.getImage().getHeight() / 2;
-					AffineTransform tx = AffineTransform.getRotateInstance(rotationRequired, locationX, locationY);
-					AffineTransformOp op = new AffineTransformOp(tx, AffineTransformOp.TYPE_BILINEAR);
-
-					// Drawing the rotated image
-					mapCopy.getGraphics().drawImage(op.filter(playerInfo.getImage(), null), x,y,null);
-					mapCopy.getGraphics().drawString(playerInfo.getName(),x-10,y+30);
-
-					//Draw small bomb on car
-					//mapCopy.getGraphics().drawImage(image3, x, y, 30, 30, null);
-			}
-			frame.repaint();
+				frame.repaint();
 			}
 		}
 	}
@@ -387,93 +370,89 @@ public class GameLoop extends JPanel implements Runnable{
 		return plist.get(pcount).toString();
 	}
 
-	/**
-	 * Repainting method
-	 */
+	/*Repainting method*/
 	public void paintComponent(Graphics g){
 		Graphics2D g2d = (Graphics2D) g;
 		g2d.translate(camera.x, camera.y);
-		if(map != null && map.mapImage != null)
-			g.drawImage(map.mapImage, 0,0,null);
-		if(mapCopy != null)
-			g.drawImage(mapCopy, 0, 0, null);
+			if(map != null && map.mapImage != null)
+				g.drawImage(map.mapImage, 0,0,null);
+			if(mapCopy != null)
+				g.drawImage(mapCopy, 0, 0, null);
+			if(bulletMap != null)
+				g.drawImage(bulletMap, 0,0, null);
 		g2d.translate(-camera.x, -camera.y);
 	}
 
-	class KeyHandler extends KeyAdapter{
+	class KeyHandler implements KeyListener{
+		public void keyTyped(KeyEvent ke) {}
+
 		public void keyReleased(KeyEvent ke){
-		   switch (ke.getKeyCode()){
-			 case KeyEvent.VK_S:yspeed = 2;break;
-			 case KeyEvent.VK_W:yspeed = 2;break;
-			 case KeyEvent.VK_D:xspeed = 2; break;// % 640;break;
-			 case KeyEvent.VK_A:xspeed = 2; break;// % 640;break;
-		   }
-		 }
+		  keys[ke.getKeyCode()] = false;
+			if(ke.getKeyCode() == KeyEvent.VK_W || ke.getKeyCode() == KeyEvent.VK_S)
+			 		yspeed = 2;
+			if(ke.getKeyCode() == KeyEvent.VK_A || ke.getKeyCode() == KeyEvent.VK_D)
+					xspeed = 2;
+		}
 
 		public void keyPressed(KeyEvent ke){
-			prevX=x;prevY=y;
-			switch (ke.getKeyCode()){
-				case KeyEvent.VK_S:
-						if(map.checkCollision(x,y+yspeed, ke.getKeyCode())){
-							y += yspeed;
-							yspeed += yspeed == 8? 0 : 1;
-							angle = 180;
-						}
-						break;
-				case KeyEvent.VK_W:
-						if(map.checkCollision(x,y-yspeed,ke.getKeyCode() )){
-							y -=  yspeed;
-							yspeed += yspeed == 8? 0 : 1;
-							angle = 0;
-						}
-						break;
-				case KeyEvent.VK_D:
-						if(map.checkCollision(x+xspeed,y,ke.getKeyCode() )){
-							x += xspeed;
-							xspeed += xspeed == 8? 0 : 1;
-							angle = 90;
-						}
-						break;
-				case KeyEvent.VK_A:
-						if(map.checkCollision(x-xspeed, y, ke.getKeyCode())){
-							x -=  xspeed;
-							xspeed += xspeed == 8? 0 : 1;
-							angle = 270;
-						}
-						break;
-				case KeyEvent.VK_ESCAPE:
-						chat.setFocusable(true);
-						chat.requestFocus();
-						break;
-				case KeyEvent.VK_SPACE:
-						if(myCar.getAmmo() == 0) break;
-						if(myCar.getPlayerType()!="ramma"){
-							// fire bullet
+			keys[ke.getKeyCode()] = true;
+			update();
+			if(ke.isShiftDown()){
+				if(myCar.getPlayerType()!="ramma"){
+								// fire bullet
 							if(myCar.getAmmo() != 0){
-								Bullet newbullet = new Bullet(myCar.getX(), myCar.getY());
-								if(myCar.getPlayerType()=="launcha"){
-									newbullet.setImg(bullet2);
-								}else if(myCar.getPlayerType()=="gunna"){
-									newbullet.setImg(bullet1);
-								}
+								BufferedImage img = myCar.getPlayerType().equals("launcha")? bullet2 : bullet1;
+								Bullet newbullet = new Bullet(myCar.getX(), myCar.getY(), img, myCar.getAngle());
 								bullets.add(newbullet);
 								myCar.setAmmo(myCar.getAmmo() - 1);
 								ammoLabel.setText(Integer.toString(myCar.getAmmo()) +" / "+myCar.getAmmoLimit());
 							}
 						}
-						break;
+			}
+		}
+
+		public void update(){
+			prevX=x;prevY=y;
+			if(keys[KeyEvent.VK_S]){
+				if(map.checkCollision(x,y+yspeed, KeyEvent.VK_S)){
+					y += yspeed;
+					yspeed += yspeed == 8? 0 : 1;
+					angle = 180;
+				}
+			}
+			if(keys[KeyEvent.VK_W]){
+				if(map.checkCollision(x,y-yspeed,KeyEvent.VK_W)){
+					y -=  yspeed;
+					yspeed += yspeed == 8? 0 : 1;
+					angle = 0;
+				}
+			}
+			if(keys[KeyEvent.VK_D]){
+				if(map.checkCollision(x+xspeed,y,KeyEvent.VK_D)){
+					x += xspeed;
+					xspeed += xspeed == 8? 0 : 1;
+					angle = 90;
+				}
+			}
+			if(keys[KeyEvent.VK_A]){
+				if(map.checkCollision(x-xspeed, y, KeyEvent.VK_A)){
+					x -=  xspeed;
+					xspeed += xspeed == 8? 0 : 1;
+					angle = 270;
+				}
+			}
+			if(keys[KeyEvent.VK_ESCAPE]){
+						chat.setFocusable(true);
+						chat.requestFocus();
+						keys[KeyEvent.VK_ESCAPE] = false;
 			}
 			if ((prevX != x || prevY != y) && (myCar.gameStage==3)){
-
 				myCar.setX(x);
 				myCar.setY(y);
 				myCar.setAngle(angle);
 				myCar.message = "PLAYER ";
-				System.out.println("curr " + x + " : " + y);
-				if(map.checkWin(x,y, angle)){
-					System.out.println("end!");
+				if(map.checkWin(x,y, angle))
 					myCar.message = "GameOver ";
-				}
 				send();
 			}
 			camera.tick(x,y);
@@ -484,7 +463,6 @@ public class GameLoop extends JPanel implements Runnable{
 
 
 class Bomb {
-
 	public int getX() {
 		return x;
 	}
@@ -539,14 +517,29 @@ class Bomb {
 
 class Bullet {
 	BufferedImage img;
-	int x, y;
+	int x, y, direction;
 	int len;	//distance to be traveled by bullet
 	boolean isLive = true;	//still not colliding with wall or cars
 
-	public Bullet(int x, int y) {
+	public Bullet(int x, int y, BufferedImage img, int angle) {
 		this.x = x;
 		this.y = y;
 		this.len = 5;
+
+		double rotationRequired = Math.toRadians (angle);
+		double locationX = img.getWidth() / 2;
+		double locationY = img.getHeight() / 2;
+		AffineTransform tx = AffineTransform.getRotateInstance(rotationRequired, locationX, locationY);
+		AffineTransformOp op = new AffineTransformOp(tx, AffineTransformOp.TYPE_BILINEAR);
+
+		this.img = op.filter(img, null);
+
+		switch(angle){
+			case 0: this.direction = 3; break;
+			case 90: this.direction = 2; break;
+			case 180: this.direction = 1; break;
+			case 270: this.direction = 4; break;
+		}
 	}
 
 	public int getX() {
@@ -571,7 +564,12 @@ class Bullet {
 
 	public void minusLen() {
 		this.len = this.len-1;
-		this.x = this.x + 10;
+		switch(direction){
+			case 1: this.y += 10; break;
+			case 2: this.x += 10; break;
+			case 3: this.y -= 10; break;
+			case 4: this.x -= 10; break;
+		}
 	}
 
 	public boolean isLive() {

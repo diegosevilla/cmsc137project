@@ -11,7 +11,7 @@ public class GameServer implements Runnable{
 	private final int WAITING = 1;
 	private final int GAME_START = 2;
 	private final int IN_PROGRESS = 3;
-
+	private final int END_GAME = 4;
 	private static final long serialVersionUID = 1L;
 
 	ArrayList plist; //player list
@@ -133,7 +133,6 @@ public class GameServer implements Runnable{
 			  		temp += plist.get(i) + " ";
 			  	}
 			  	broadcast(temp);
-
 				break;
 			case GAME_START:
 				broadcast("START");
@@ -147,9 +146,11 @@ public class GameServer implements Runnable{
 					broadcast("PLAYER "+racecar.getName());
 				} else if(racecar.message!=null && racecar.message.startsWith("GameOver")){
 					broadcast("GameOver "  + racecar.getName());
-					return;
+					gameStage = END_GAME;
 				}
 				break;
+			case END_GAME:
+					return;
 			}
 		}
 	}

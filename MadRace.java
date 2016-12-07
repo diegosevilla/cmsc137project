@@ -204,10 +204,10 @@ public class MadRace  implements Runnable{
 		ImagePanel htp5 = new ImagePanel(new ImageIcon("piks/gunna.jpg").getImage());
 
 		cardPanel.add(htp1, "1");
-        cardPanel.add(htp2, "2");
-        cardPanel.add(htp3, "3");
-        cardPanel.add(htp4, "4");
-        cardPanel.add(htp5, "5");
+    cardPanel.add(htp2, "2");
+    cardPanel.add(htp3, "3");
+    cardPanel.add(htp4, "4");
+    cardPanel.add(htp5, "5");
 
 		howTo.setLayout(new BorderLayout());
 		howTo.setPreferredSize(new Dimension(500, 550));

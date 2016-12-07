@@ -104,6 +104,10 @@ public class RaceCar implements Serializable{
 		this.health = health;
 	}
 
+	public void damage(int damage) {
+		this.health -= damage;
+	}
+
 	public int getAmmo() {
 		return ammo;
 	}

@@ -30,7 +30,6 @@ public class Map extends JPanel{
 			mapLegend = new int[Integer.parseInt(pixDim[1])][Integer.parseInt(pixDim[0])];
 			pixSizeWidth = this.width/Integer.parseInt(pixDim[0]);
 			pixSizeHeight = this.height/Integer.parseInt(pixDim[1]);
-			System.out.println("pixSizeH = " + pixSizeHeight + " : pixSizeW = " + pixSizeWidth);
 			while((line = br.readLine()) != null) {
 				String[] textures = line.split(" ");
 				for (int col = 0; col < textures.length; col++) {
@@ -119,8 +118,6 @@ public class Map extends JPanel{
 	public boolean checkWin(int x, int y, int dir){
 		x = x/pixSizeWidth;
 		y = y/pixSizeHeight;
-		System.out.print("map[" + y +"]" + "[" + x + "] = ");
-		System.out.println(mapLegend[y][x]);
 		if(mapLegend[y][x] == 4) return true;
 		return false;
 	}
